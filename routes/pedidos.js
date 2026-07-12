@@ -1,0 +1,136 @@
+const express = require("express");
+const { randomUUID } = require("crypto");
+const db = require("../db");
+const { autenticar, permitirPapeis } = require("../middleware/auth");
+
+const router = express.Router();
+
+function paraSaida(p) {
+  return { ...p, itens: JSON.parse(p.itens) };
+}
+
+// Limite de segurança para evitar pedidos com centenas de linhas/itens abusivos
+const MAX_ITENS_POR_PEDIDO = 100;
+const MAX_QUANTIDADE_POR_ITEM = 500;
+
+// Pública — o cardápio do cliente cria pedidos sem precisar de login
+router.post("/", (req, res) => {
+  const { cliente, itens, formaPagamento, trocoPara } = req.body || {};
+  // Observação: "total", "precoUnit" e "produtoNome" enviados pelo cliente
+  // são IGNORADOS de propósito — nunca confie em preço/total vindo do front-end.
+  // Tudo é recalculado abaixo a partir do banco de dados.
+
+  if (typeof cliente !== "string" || !cliente.trim()) {
+    return res.status(400).json({ erro: "Informe o nome do cliente." });
+  }
+  if (!Array.isArray(itens) || itens.length === 0 || itens.length > MAX_ITENS_POR_PEDIDO) {
+    return res.status(400).json({ erro: "Informe ao menos um item válido no pedido." });
+  }
+  if (!["pix", "cartao", "dinheiro"].includes(formaPagamento)) {
+    return res.status(400).json({ erro: "Forma de pagamento inválida." });
+  }
+
+  // Agrupa quantidades por produtoId caso o mesmo item venha duplicado no payload
+  const quantidadesPorProduto = new Map();
+  for (const item of itens) {
+    const produtoId = item && item.produtoId;
+    const quantidade = Number(item && item.quantidade);
+
+    if (!produtoId || typeof produtoId !== "string") {
+      return res.status(400).json({ erro: "Item de pedido inválido: produtoId ausente." });
+    }
+    if (!Number.isInteger(quantidade) || quantidade <= 0 || quantidade > MAX_QUANTIDADE_POR_ITEM) {
+      return res.status(400).json({ erro: "Quantidade inválida para um dos itens do pedido." });
+    }
+    quantidadesPorProduto.set(produtoId, (quantidadesPorProduto.get(produtoId) || 0) + quantidade);
+  }
+
+  // Busca os produtos reais no banco — nome, preço e categoria vêm daqui, nunca do cliente
+  const itensValidados = [];
+  let total = 0;
+  for (const [produtoId, quantidade] of quantidadesPorProduto) {
+    const produto = db.prepare("SELECT * FROM produtos WHERE id = ?").get(produtoId);
+    if (!produto || !produto.ativo) {
+      return res.status(400).json({ erro: `Produto indisponível ou inexistente (id: ${produtoId}).` });
+    }
+    const precoUnit = Number(produto.preco);
+    itensValidados.push({
+      produtoId: produto.id,
+      produtoNome: produto.nome,
+      categoria: produto.categoria || "Outros",
+      precoUnit,
+      quantidade,
+    });
+    total += precoUnit * quantidade;
+  }
+  total = Math.round(total * 100) / 100; // evita erro de ponto flutuante
+
+  const trocoParaNumero = trocoPara !== undefined && trocoPara !== null && trocoPara !== ""
+    ? Number(trocoPara)
+    : null;
+  if (trocoParaNumero !== null && (isNaN(trocoParaNumero) || trocoParaNumero < total)) {
+    return res.status(400).json({ erro: "Valor de troco inválido para o total do pedido." });
+  }
+
+  const id = randomUUID();
+  db.prepare(`
+    INSERT INTO pedidos (id, cliente, itens, total, status, formaPagamento, trocoPara)
+    VALUES (?, ?, ?, ?, 'pendente', ?, ?)
+  `).run(id, cliente.trim().slice(0, 120), JSON.stringify(itensValidados), total, formaPagamento, trocoParaNumero);
+
+  const pedido = paraSaida(db.prepare("SELECT * FROM pedidos WHERE id = ?").get(id));
+  req.app.get("io").emit("pedido:novo", pedido);
+  res.status(201).json(pedido);
+});
+
+router.get("/", autenticar, (req, res) => {
+  const lista = db.prepare("SELECT * FROM pedidos ORDER BY criadoEm DESC").all();
+  res.json(lista.map(paraSaida));
+});
+
+router.patch("/:id/status", autenticar, (req, res) => {
+  const { status } = req.body || {};
+  const pedido = db.prepare("SELECT * FROM pedidos WHERE id = ?").get(req.params.id);
+  if (!pedido) return res.status(404).json({ erro: "Pedido não encontrado." });
+
+  const papel = req.usuario.papel;
+  const statusValidos = ["pendente", "preparando", "pronto", "entregue", "recusado"];
+  if (!statusValidos.includes(status)) {
+    return res.status(400).json({ erro: "Status inválido." });
+  }
+
+  if (["recusado", "entregue"].includes(pedido.status)) {
+    return res.status(409).json({ erro: "Este pedido já está em um status final e não pode ser alterado." });
+  }
+
+  if (papel === "admin") {
+    return res.status(403).json({ erro: "Administradores apenas visualizam o andamento dos pedidos." });
+  }
+
+  if (pedido.status === "pendente") {
+    const podeAceitar = status === "preparando" && (papel === "cozinha" || papel === "gerente");
+    const podeRecusar = status === "recusado" && papel === "gerente";
+    if (!podeAceitar && !podeRecusar) {
+      return res.status(403).json({ erro: "Você não pode realizar essa transição de status." });
+    }
+  } else {
+    const opcoesPermitidas = papel === "cozinha" ? ["preparando", "pronto"] : ["preparando", "pronto", "entregue"];
+    if (!opcoesPermitidas.includes(status)) {
+      return res.status(403).json({ erro: "Você não pode definir este status." });
+    }
+  }
+
+  db.prepare("UPDATE pedidos SET status = ? WHERE id = ?").run(status, req.params.id);
+  const atualizado = paraSaida(db.prepare("SELECT * FROM pedidos WHERE id = ?").get(req.params.id));
+  req.app.get("io").emit("pedido:atualizado", atualizado);
+  res.json(atualizado);
+});
+
+router.delete("/:id", autenticar, permitirPapeis("admin", "gerente"), (req, res) => {
+  const info = db.prepare("DELETE FROM pedidos WHERE id = ?").run(req.params.id);
+  if (info.changes === 0) return res.status(404).json({ erro: "Pedido não encontrado." });
+  req.app.get("io").emit("pedido:removido", { id: req.params.id });
+  res.status(204).send();
+});
+
+module.exports = router;
