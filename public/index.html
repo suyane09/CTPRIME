@@ -4,10 +4,9 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>CT Prime — Administração</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer></script>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23141414'/%3E%3Ctext x='32' y='42' font-family='Georgia,serif' font-size='28' font-weight='700' fill='%23D4A72C' text-anchor='middle'%3ECT%3C/text%3E%3C/svg%3E" />
+<link href="/assets/fonts/fonts.css" rel="stylesheet">
+<script src="/assets/vendor/chart.umd.js" defer></script>
 <script src="/socket.io/socket.io.js"></script>
 <style>
 * { box-sizing: border-box; }
@@ -39,6 +38,26 @@ body {
 h1, h3, h4, .metric-value, .brand-name { font-family: "Sora", "Inter", sans-serif; }
 
 .app { display: flex; min-height: 100vh; }
+
+/* ===================== BANNER DE CONEXÃO ===================== */
+.conn-banner {
+  position: fixed; top: 0; left: 0; width: 100%; z-index: 200;
+  display: none; align-items: center; justify-content: center; gap: 10px;
+  padding: 10px 16px; font-size: 13px; font-weight: 600; text-align: center;
+  color: #fff; background: var(--danger);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+}
+.conn-banner.visivel { display: flex; }
+.conn-banner.aviso { background: #b45309; }
+.conn-banner.sucesso { background: #15803d; }
+.conn-banner-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: #fff; flex-shrink: 0;
+  animation: pulsar-conexao 1.1s ease-in-out infinite;
+}
+.conn-banner.sucesso .conn-banner-dot { animation: none; }
+@keyframes pulsar-conexao { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+body:has(.conn-banner.visivel) .login-screen,
+body:has(.conn-banner.visivel) .app { padding-top: 38px; }
 
 /* ===================== TELA DE LOGIN ===================== */
 .login-screen {
@@ -90,6 +109,21 @@ h1, h3, h4, .metric-value, .brand-name { font-family: "Sora", "Inter", sans-seri
   min-width: 18px; height: 18px; border-radius: 999px; display: none; align-items: center; justify-content: center; padding: 0 5px;
 }
 .badge-pendentes.visivel { display: inline-flex; }
+.badge-estoque-baixo {
+  margin-left: auto; background: #dc2626; color: #fff; font-size: 11px; font-weight: 700;
+  min-width: 18px; height: 18px; border-radius: 999px; display: none; align-items: center; justify-content: center; padding: 0 5px;
+}
+.badge-estoque-baixo.visivel { display: inline-flex; }
+
+.alerta-estoque {
+  display: flex; align-items: flex-start; gap: 12px; background: #fef2f2; border: 1px solid #fecaca;
+  color: #991b1b; border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; cursor: pointer; transition: background 0.15s;
+}
+.alerta-estoque:hover { background: #fee2e2; }
+.alerta-estoque svg { width: 20px; height: 20px; flex-shrink: 0; margin-top: 1px; }
+.alerta-estoque strong { display: block; font-size: 14px; margin-bottom: 2px; }
+.alerta-estoque span { font-size: 13px; }
+tr.linha-estoque-baixo { background: #fef2f2; }
 
 /* ===================== CONTEÚDO ===================== */
 .content { flex: 1; padding: 32px 36px; min-width: 0; }
@@ -120,6 +154,11 @@ h1, h3, h4, .metric-value, .brand-name { font-family: "Sora", "Inter", sans-seri
 .empty-state strong { display: block; color: var(--text-main); font-size: 15px; margin-bottom: 6px; }
 .empty-state code { background: #f1f1ec; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
 
+.page-loading { display: flex; align-items: center; justify-content: center; padding: 90px 24px; color: var(--text-muted); gap: 12px; }
+.page-loading .spinner { width: 22px; height: 22px; border-radius: 50%; border: 2.5px solid #e4e4de; border-top-color: var(--accent); animation: girar-spinner 0.7s linear infinite; flex-shrink: 0; }
+.page-loading span { font-size: 13.5px; font-weight: 600; }
+@keyframes girar-spinner { to { transform: rotate(360deg); } }
+
 /* ===================== TABELAS ===================== */
 .table-wrap { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 16px; box-shadow: var(--shadow-sm); }
 table { width: 100%; min-width: 560px; border-collapse: collapse; font-size: 13px; }
@@ -138,6 +177,12 @@ tbody tr:hover td { background: #fafaf8; }
 .form-field input, .form-field select {
   width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-family: inherit; background: #fff;
 }
+.form-field input.campo-invalido, .form-field select.campo-invalido {
+  border-color: var(--danger); background: #fef2f2;
+}
+.form-field .erro-campo { display: none; color: var(--danger); font-size: 11px; margin-top: 4px; }
+.form-field input.campo-invalido + .erro-campo,
+.form-field select.campo-invalido + .erro-campo { display: block; }
 .form-field-checkbox { display: flex; align-items: center; gap: 8px; margin-top: 26px; }
 .form-field-checkbox input { width: 16px; height: 16px; }
 .form-actions { display: flex; gap: 8px; margin-top: 4px; }
@@ -156,6 +201,38 @@ tbody tr:hover td { background: #fafaf8; }
 .btn-secondary:hover { background: #f4f4f1; }
 .btn-danger-outline { background: #fff; border-color: #fecaca; color: var(--danger); padding: 5px 10px; font-size: 12px; }
 .btn-danger-outline:hover { background: #fef2f2; }
+
+/* Ícones pequenos (ex: lixeira nas tabelas). Precisa de display flex para que
+   width/height tenham efeito, e o svg interno precisa herdar 100% do tamanho. */
+.icon-sm { display: inline-flex; width: 13px; height: 13px; vertical-align: -2px; }
+.icon-sm svg { width: 100%; height: 100%; }
+
+/* ===================== MODAL DE CONFIRMAÇÃO ===================== */
+.confirm-overlay {
+  position: fixed; inset: 0; background: rgba(20,20,15,0.45);
+  display: none; align-items: center; justify-content: center; z-index: 200;
+  padding: 16px;
+}
+.confirm-overlay.aberto { display: flex; }
+.confirm-dialog {
+  background: var(--white); border-radius: var(--radius); width: 100%; max-width: 380px;
+  padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.25); text-align: left;
+}
+.confirm-dialog-icon {
+  width: 44px; height: 44px; border-radius: 12px; background: #fef2f2; color: var(--danger);
+  display: flex; align-items: center; justify-content: center; margin-bottom: 14px;
+}
+.confirm-dialog-icon svg { width: 22px; height: 22px; }
+.confirm-dialog h4 { margin: 0 0 6px; font-size: 16px; font-weight: 700; }
+.confirm-dialog p { margin: 0; font-size: 13.5px; color: var(--text-muted); line-height: 1.5; }
+.confirm-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+.confirm-dialog-actions .btn-secondary, .confirm-dialog-actions .btn-danger-solid {
+  border-radius: 8px; padding: 9px 16px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; border: 1px solid transparent;
+}
+.confirm-dialog-actions .btn-secondary { background: #fff; border-color: var(--border); color: var(--text-main); }
+.confirm-dialog-actions .btn-secondary:hover { background: #f4f4f1; }
+.confirm-dialog-actions .btn-danger-solid { background: var(--danger); color: #fff; }
+.confirm-dialog-actions .btn-danger-solid:hover { background: #b91c1c; }
 .btn-primary-lg {
   padding: 12px 22px; font-size: 14px; border-radius: 10px;
   display: inline-flex; align-items: center; justify-content: center; gap: 8px; letter-spacing: 0.2px;
@@ -227,6 +304,11 @@ tbody tr:hover td { background: #fafaf8; }
 </head>
 <body>
 
+  <div class="conn-banner" id="conn-banner" role="status" aria-live="assertive">
+    <span class="conn-banner-dot"></span>
+    <span id="conn-banner-texto">Sem conexão com o servidor. Tentando reconectar…</span>
+  </div>
+
   <div class="login-screen" id="login-screen">
     <div class="login-card">
       <div class="brand">
@@ -261,7 +343,7 @@ tbody tr:hover td { background: #fafaf8; }
         <button class="menu-item" data-page="painel" data-role="admin,gerente,atendente"><i data-icon="grid"></i> Painel</button>
         <button class="menu-item" data-page="pedidos" data-role="admin,gerente,atendente,cozinha"><i data-icon="cart"></i> Pedidos <span class="badge-pendentes" id="badge-pendentes"></span></button>
         <button class="menu-item" data-page="produtos" data-role="admin,gerente,atendente"><i data-icon="box"></i> Produtos</button>
-        <button class="menu-item" data-page="estoque" data-role="admin,gerente,atendente"><i data-icon="warehouse"></i> Estoque</button>
+        <button class="menu-item" data-page="estoque" data-role="admin,gerente,atendente"><i data-icon="warehouse"></i> Estoque <span class="badge-estoque-baixo" id="badge-estoque-baixo"></span></button>
         <button class="menu-item" data-page="relatorios" data-role="admin"><i data-icon="file"></i> Relatórios</button>
         <button class="menu-item" data-page="usuarios" data-role="admin"><i data-icon="users"></i> Usuários</button>
         <button class="menu-item" data-page="configuracoes" data-role="admin"><i data-icon="settings"></i> Configurações</button>
@@ -285,6 +367,18 @@ tbody tr:hover td { background: #fafaf8; }
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <div class="notificacoes-wrap" id="notificacoes-wrap"></div>
 
+  <div class="confirm-overlay" id="confirm-overlay">
+    <div class="confirm-dialog">
+      <div class="confirm-dialog-icon"><i data-icon="trash"></i></div>
+      <h4 id="confirm-titulo">Confirmar exclusão</h4>
+      <p id="confirm-mensagem">Tem certeza que deseja excluir este item?</p>
+      <div class="confirm-dialog-actions">
+        <button class="btn-secondary" id="confirm-cancelar">Cancelar</button>
+        <button class="btn-danger-solid" id="confirm-ok">Excluir</button>
+      </div>
+    </div>
+  </div>
+
 <script>
 // ============================================================
 // ÍCONES
@@ -302,11 +396,49 @@ const ICONS = {
   trending: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>',
   trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg>',
   plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>',
+  alert: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3.5 1.5 21h21L12 3.5Z"/><path d="M12 9.5v5"/><path d="M12 17.5h.01"/></svg>',
+  printer: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9V3h12v6"/><rect x="4" y="9" width="16" height="8" rx="1.5"/><path d="M6 14h12v7H6z"/><circle cx="17.5" cy="12" r="0.6" fill="currentColor" stroke="none"/></svg>',
 };
 function renderIcons(root = document) {
   root.querySelectorAll("[data-icon]").forEach((el) => {
     const name = el.getAttribute("data-icon");
     if (ICONS[name]) el.innerHTML = ICONS[name];
+  });
+}
+
+// ============================================================
+// MODAL DE CONFIRMAÇÃO (substitui o confirm() nativo do navegador)
+// ============================================================
+function confirmarAcao(titulo, mensagem, textoBotao = "Excluir") {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById("confirm-overlay");
+    document.getElementById("confirm-titulo").textContent = titulo;
+    document.getElementById("confirm-mensagem").textContent = mensagem;
+    const btnOk = document.getElementById("confirm-ok");
+    const btnCancelar = document.getElementById("confirm-cancelar");
+    btnOk.textContent = textoBotao;
+
+    function fechar(resultado) {
+      overlay.classList.remove("aberto");
+      btnOk.removeEventListener("click", onOk);
+      btnCancelar.removeEventListener("click", onCancelar);
+      overlay.removeEventListener("click", onOverlay);
+      document.removeEventListener("keydown", onEsc);
+      resolve(resultado);
+    }
+    function onOk() { fechar(true); }
+    function onCancelar() { fechar(false); }
+    function onOverlay(evento) { if (evento.target === overlay) fechar(false); }
+    function onEsc(evento) { if (evento.key === "Escape") fechar(false); }
+
+    btnOk.addEventListener("click", onOk);
+    btnCancelar.addEventListener("click", onCancelar);
+    overlay.addEventListener("click", onOverlay);
+    document.addEventListener("keydown", onEsc);
+
+    overlay.classList.add("aberto");
+    renderIcons(overlay);
+    btnOk.focus();
   });
 }
 
@@ -353,6 +485,29 @@ function mostrarToast(mensagem) {
   toast.classList.add("show");
   clearTimeout(mostrarToast._t);
   mostrarToast._t = setTimeout(() => toast.classList.remove("show"), 2200);
+}
+
+// ============================================================
+// VALIDAÇÃO DE FORMULÁRIOS (client-side)
+// ============================================================
+const REGEX_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function marcarInvalido(input) {
+  if (input) input.classList.add("campo-invalido");
+}
+function limparInvalido(input) {
+  if (input) input.classList.remove("campo-invalido");
+}
+// Remove o destaque de erro assim que o usuário volta a digitar no campo.
+function limparInvalidoAoDigitar(...inputs) {
+  inputs.forEach((input) => {
+    if (!input) return;
+    input.addEventListener("input", () => limparInvalido(input));
+  });
+}
+function numeroValido(valor, { min = -Infinity, max = Infinity } = {}) {
+  const n = Number(valor);
+  return Number.isFinite(n) && n >= min && n <= max;
 }
 
 // ============================================================
@@ -448,11 +603,29 @@ async function api(metodo, caminho, corpo) {
   const token = obterToken();
   if (token) cabecalhos["Authorization"] = "Bearer " + token;
 
-  const resposta = await fetch(API_BASE + caminho, {
-    method: metodo,
-    headers: cabecalhos,
-    body: corpo !== undefined ? JSON.stringify(corpo) : undefined,
-  });
+  const controlador = new AbortController();
+  const cronometro = setTimeout(() => controlador.abort(), 15000);
+
+  let resposta;
+  try {
+    resposta = await fetch(API_BASE + caminho, {
+      method: metodo,
+      headers: cabecalhos,
+      body: corpo !== undefined ? JSON.stringify(corpo) : undefined,
+      signal: controlador.signal,
+    });
+  } catch (erroRede) {
+    // fetch rejeita (TypeError) quando não há conexão, DNS falha, CORS bloqueia, etc.
+    // Também cai aqui quando o timeout acima aborta a requisição.
+    if (typeof connBanner !== "undefined") connBanner.offline();
+    const foiTimeout = erroRede.name === "AbortError";
+    throw new Error(foiTimeout ? "O servidor demorou para responder. Verifique sua conexão." : "Sem conexão com o servidor. Verifique sua internet e tente novamente.");
+  } finally {
+    clearTimeout(cronometro);
+  }
+
+  // Se chegamos aqui, a rede está respondendo — garante que o banner de conexão suma.
+  if (typeof connBanner !== "undefined") connBanner.online();
 
   if (resposta.status === 204) return null;
 
@@ -562,7 +735,76 @@ const Auth = {
 // ============================================================
 // TEMPO REAL — Socket.IO (substitui o evento "storage" entre abas)
 // ============================================================
-const socket = io();
+const socket = io({
+  reconnection: true,
+  reconnectionAttempts: Infinity,
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 10000,
+  timeout: 10000,
+});
+
+// ============================================================
+// BANNER DE STATUS DE CONEXÃO (Socket.IO + rede)
+// ============================================================
+const connBanner = {
+  el: null,
+  texto: null,
+  desconectadoDesde: null,
+
+  init() {
+    this.el = document.getElementById("conn-banner");
+    this.texto = document.getElementById("conn-banner-texto");
+  },
+
+  mostrar(mensagem, tipo) {
+    if (!this.el) return;
+    this.texto.textContent = mensagem;
+    this.el.classList.remove("aviso", "sucesso");
+    if (tipo) this.el.classList.add(tipo);
+    this.el.classList.add("visivel");
+  },
+
+  ocultar() {
+    if (!this.el) return;
+    this.el.classList.remove("visivel", "aviso", "sucesso");
+  },
+
+  offline() {
+    this.desconectadoDesde = this.desconectadoDesde || Date.now();
+    this.mostrar("Sem conexão com o servidor. Tentando reconectar…");
+  },
+
+  reconectando(tentativa) {
+    this.mostrar(`Reconectando ao servidor (tentativa ${tentativa})…`, "aviso");
+  },
+
+  online() {
+    const ficouOffline = !!this.desconectadoDesde;
+    this.desconectadoDesde = null;
+    if (ficouOffline) {
+      this.mostrar("Conexão restabelecida.", "sucesso");
+      setTimeout(() => this.ocultar(), 2500);
+    } else {
+      this.ocultar();
+    }
+  },
+};
+
+socket.on("connect", () => {
+  connBanner.online();
+  // Ao reconectar, os eventos perdidos durante a queda não chegam retroativamente:
+  // atualizamos os dados da página atual e os badges para não deixar o painel desatualizado.
+  atualizarBadgePendentes();
+  atualizarBadgeEstoqueBaixo();
+  if (typeof paginaAtivaId !== "undefined" && PAGINAS[paginaAtivaId]) {
+    const corpo = document.getElementById("page-body");
+    if (corpo) PAGINAS[paginaAtivaId].render(corpo);
+  }
+});
+socket.on("disconnect", () => { connBanner.offline(); });
+socket.on("reconnect_attempt", (tentativa) => { connBanner.reconectando(tentativa); });
+socket.on("connect_error", () => { connBanner.offline(); });
+socket.on("reconnect_error", () => { connBanner.offline(); });
 
 // ============================================================
 // MÉTRICAS DO PAINEL
@@ -618,6 +860,10 @@ function emptyState(titulo, mensagem) {
   return `<div class="empty-state"><strong>${titulo}</strong>${mensagem}</div>`;
 }
 
+function paginaCarregandoHTML() {
+  return `<div class="page-loading"><span class="spinner"></span><span>Carregando...</span></div>`;
+}
+
 function badgeStatus(status) {
   const rotulos = { pendente: "Pendente", preparando: "Preparando", pronto: "Pronto", entregue: "Entregue", recusado: "Recusado" };
   return `<span class="badge badge-${status}">${rotulos[status] || status}</span>`;
@@ -634,8 +880,19 @@ async function renderPainel(container) {
   const metricas = calcularMetricas(todosPedidos);
   const vendas7 = calcularVendas7Dias(todosPedidos);
   const produtosVendidos = calcularProdutosMaisVendidos(todosPedidos);
+  const itensEstoque = await store.estoque.listar();
+  const itensBaixos = itensEstoque.filter((i) => i.quantidade < i.estoqueMinimo);
 
   container.innerHTML = `
+    ${itensBaixos.length ? `
+      <div class="alerta-estoque" id="alerta-estoque-baixo">
+        <i data-icon="alert"></i>
+        <div>
+          <strong>${itensBaixos.length} ${itensBaixos.length === 1 ? "item está" : "itens estão"} com estoque baixo</strong>
+          <span>${itensBaixos.map((i) => escapeHtml(i.nome)).join(", ")} — clique para ver e repor.</span>
+        </div>
+      </div>
+    ` : ""}
     <div class="metric-grid">
       <div class="metric-card"><div class="metric-icon" style="background:#DCFCE7"><i data-icon="dollar" style="color:#16A34A"></i></div>
         <div><p class="metric-label">VENDAS HOJE</p><p class="metric-value">${formatBRL(metricas.vendasHoje)}</p></div></div>
@@ -654,6 +911,8 @@ async function renderPainel(container) {
     </div>
   `;
   renderIcons(container);
+  const alertaEstoque = document.getElementById("alerta-estoque-baixo");
+  if (alertaEstoque) alertaEstoque.addEventListener("click", () => { if (window.__irParaEstoque) window.__irParaEstoque(); });
 
   if (graficoVendasInstancia) graficoVendasInstancia.destroy();
   if (graficoProdutosInstancia) graficoProdutosInstancia.destroy();
@@ -677,18 +936,110 @@ async function renderPainel(container) {
 // ============================================================
 // PÁGINA: PEDIDOS
 // ============================================================
+// ============================================================
+// IMPRESSÃO DE COMANDA (pedido) — pra agilizar o balcão/cozinha
+// ============================================================
+function imprimirComanda(pedido) {
+  const codigo = pedido.id.slice(0, 6).toUpperCase();
+  const itensHtml = (pedido.itens || []).map((i) => `
+    <tr>
+      <td class="qtd">${i.quantidade}x</td>
+      <td>
+        ${escapeHtml(i.produtoNome)}
+        ${i.observacao ? `<div class="obs">Obs: ${escapeHtml(i.observacao)}</div>` : ""}
+      </td>
+    </tr>`).join("");
+
+  const rotulosPagamento = { pix: "Pix", cartao: "Cartão", dinheiro: "Dinheiro" };
+  const linhaPagamento = pedido.formaPagamento
+    ? `${rotulosPagamento[pedido.formaPagamento] || pedido.formaPagamento}${pedido.formaPagamento === "dinheiro" && pedido.trocoPara ? ` — troco p/ ${formatBRL(pedido.trocoPara)}` : ""}`
+    : "—";
+
+  const janela = window.open("", "_blank", "width=380,height=640");
+  if (!janela) { mostrarToast("O navegador bloqueou a janela de impressão. Permita pop-ups para este site."); return; }
+
+  janela.document.write(`
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+      <meta charset="UTF-8" />
+      <title>Comanda #${codigo}</title>
+      <style>
+        * { box-sizing: border-box; }
+        body { font-family: "Courier New", monospace; color: #111; margin: 0; padding: 14px; width: 300px; }
+        h1 { font-size: 16px; margin: 0 0 2px; text-align: center; }
+        .sub { text-align: center; font-size: 11px; color: #444; margin-bottom: 10px; }
+        .codigo { text-align: center; font-size: 20px; font-weight: bold; letter-spacing: 1px; margin: 8px 0; padding: 6px; border: 2px dashed #111; }
+        hr { border: none; border-top: 1px dashed #111; margin: 10px 0; }
+        .linha { display: flex; justify-content: space-between; font-size: 12.5px; margin: 3px 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+        td { font-size: 13px; padding: 4px 0; vertical-align: top; }
+        td.qtd { width: 34px; font-weight: bold; }
+        .obs { font-size: 11px; color: #333; margin-top: 1px; }
+        .total { font-size: 15px; font-weight: bold; text-align: right; margin-top: 8px; }
+        .rodape { text-align: center; font-size: 10.5px; color: #666; margin-top: 14px; }
+        @media print { body { padding: 4px; } }
+      </style>
+    </head>
+    <body>
+      <h1>CT PRIME</h1>
+      <p class="sub">Comanda do pedido</p>
+      <div class="codigo">#${codigo}</div>
+      <div class="linha"><span>Cliente</span><strong>${escapeHtml(pedido.cliente || "—")}</strong></div>
+      ${pedido.telefone ? `<div class="linha"><span>Telefone</span><span>${escapeHtml(pedido.telefone)}</span></div>` : ""}
+      <div class="linha"><span>Recebido em</span><span>${formatDataHora(pedido.criadoEm)}</span></div>
+      <hr />
+      <table>${itensHtml}</table>
+      <hr />
+      <div class="linha"><span>Pagamento</span><span>${escapeHtml(linhaPagamento)}</span></div>
+      <div class="total">Total: ${formatBRL(pedido.total)}</div>
+      <p class="rodape">CT Prime — impresso em ${new Date().toLocaleString("pt-BR")}</p>
+    </body>
+    </html>
+  `);
+  janela.document.close();
+  janela.onload = () => { janela.focus(); janela.print(); };
+}
+
 function renderPedidos(container) {
   const usuario = Auth.obterUsuarioLogado();
   const eCozinha = usuario?.papel === "cozinha";
+  let filtroData = hojeChave();
 
   container.innerHTML = `
     <div class="toolbar" style="justify-content:space-between; display: ${eCozinha ? 'none' : 'flex'}">
       <p class="page-subtitle" style="margin:0">Pedidos feitos pelo cliente no cardápio chegam aqui automaticamente.</p>
       <a href="cardapio.html" target="_blank" class="btn-secondary" style="text-decoration:none;display:inline-block">Abrir cardápio do cliente ↗</a>
     </div>
+    <div class="metric-grid" style="margin-top:16px">
+      <div class="metric-card">
+        <div class="metric-icon" style="background:#fdf3d9"><i data-icon="file"></i></div>
+        <div>
+          <p class="metric-label">PEDIDOS NA DATA</p>
+          <p class="metric-value" id="contador-pedidos-data">—</p>
+        </div>
+      </div>
+      <div class="form-field" style="max-width:220px;margin:auto 0">
+        <label for="filtro-data-pedidos">Filtrar por data</label>
+        <input id="filtro-data-pedidos" type="date" value="${filtroData}" />
+      </div>
+      <div style="display:flex;align-items:flex-end">
+        <button class="btn-secondary" id="btn-limpar-filtro-data">Ver todos os dias</button>
+      </div>
+    </div>
     <div id="tabela-pedidos-wrap" style="margin-top:16px"></div>
   `;
   renderIcons(container);
+
+  document.getElementById("filtro-data-pedidos").addEventListener("change", (evento) => {
+    filtroData = evento.target.value || null;
+    desenharTabela();
+  });
+  document.getElementById("btn-limpar-filtro-data").addEventListener("click", () => {
+    filtroData = null;
+    document.getElementById("filtro-data-pedidos").value = "";
+    desenharTabela();
+  });
 
   // NOVA LÓGICA DE GERENCIAMENTO DE STATUS (BLOQUEIA OPERAÇÕES PARA O ADMIN)
   function acoesPorStatus(p) {
@@ -738,10 +1089,28 @@ function renderPedidos(container) {
   }
 
   async function desenharTabela() {
-    const lista = await store.pedidos.listar();
+    const todos = await store.pedidos.listar();
+    const lista = filtroData
+      ? todos.filter((p) => chaveDiaSP(paraDataUTC(p.criadoEm)) === filtroData)
+      : todos;
     const wrap = document.getElementById("tabela-pedidos-wrap");
-    if (!lista.length) {
+
+    const contadorEl = document.getElementById("contador-pedidos-data");
+    if (contadorEl) {
+      if (filtroData) {
+        const [ano, mes, dia] = filtroData.split("-");
+        contadorEl.textContent = `${lista.length} em ${dia}/${mes}/${ano}`;
+      } else {
+        contadorEl.textContent = `${lista.length} no total`;
+      }
+    }
+
+    if (!todos.length) {
       wrap.innerHTML = emptyState("Nenhum pedido recebido ainda", "Assim que um cliente fizer um pedido pelo cardápio, ele aparece aqui.");
+      return;
+    }
+    if (!lista.length) {
+      wrap.innerHTML = emptyState("Nenhum pedido nessa data", "Escolha outra data ou clique em “Ver todos os dias”.");
       return;
     }
     wrap.innerHTML = `
@@ -754,6 +1123,7 @@ function renderPedidos(container) {
             ${eCozinha ? '' : '<th>Total</th><th>Pagamento</th>'}
             <th>Recebido em</th>
             <th>Status</th>
+            <th></th>
             ${eCozinha ? '' : '<th></th>'}
           </tr>
         </thead>
@@ -766,7 +1136,8 @@ function renderPedidos(container) {
               ${eCozinha ? '' : `<td>${formatBRL(p.total)}</td><td style="font-size:12px">${formatarPagamento(p)}</td>`}
               <td>${formatDataHora(p.criadoEm)}</td>
               <td>${acoesPorStatus(p)}</td>
-              ${eCozinha ? '' : `<td><button class="btn-danger-outline" data-remover="${p.id}" title="Excluir"><i data-icon="trash" style="width:12px;height:12px;vertical-align:-1px"></i></button></td>`}
+              <td><button class="btn-secondary" data-imprimir="${p.id}" title="Imprimir comanda" aria-label="Imprimir comanda"><i data-icon="printer" class="icon-sm"></i></button></td>
+              ${eCozinha ? '' : `<td><button class="btn-danger-outline" data-remover="${p.id}" title="Excluir"><i data-icon="trash" class="icon-sm"></i></button></td>`}
             </tr>`).join("")}
         </tbody>
       </table></div>
@@ -785,7 +1156,7 @@ function renderPedidos(container) {
     });
     wrap.querySelectorAll("[data-recusar]").forEach((btn) => {
       btn.addEventListener("click", async () => {
-        if (!confirm("Recusar este pedido?")) return;
+        if (!(await confirmarAcao("Recusar pedido", "Tem certeza que deseja recusar este pedido?", "Recusar"))) return;
         try {
           await store.pedidos.atualizarStatus(btn.dataset.recusar, "recusado");
           mostrarToast("Pedido recusado.");
@@ -803,9 +1174,15 @@ function renderPedidos(container) {
         desenharTabela();
       });
     });
+    wrap.querySelectorAll("[data-imprimir]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const pedido = lista.find((p) => p.id === btn.dataset.imprimir);
+        if (pedido) imprimirComanda(pedido);
+      });
+    });
     wrap.querySelectorAll("[data-remover]").forEach((btn) => {
       btn.addEventListener("click", async () => {
-        if (!confirm("Excluir este pedido?")) return;
+        if (!(await confirmarAcao("Excluir pedido", "Tem certeza que deseja excluir este pedido? Essa ação não pode ser desfeita."))) return;
         try {
           await store.pedidos.remover(btn.dataset.remover);
           mostrarToast("Pedido excluído.");
@@ -842,7 +1219,7 @@ function renderProdutos(container) {
             <td>${p.imagemUrl ? `<img src="${escapeHtml(p.imagemUrl)}" alt="" style="width:36px;height:36px;border-radius:8px;object-fit:cover;display:block" />` : `<div style="width:36px;height:36px;border-radius:8px;background:#f1f1ec"></div>`}</td>
             <td>${escapeHtml(p.nome)}</td><td>${escapeHtml(p.categoria) || "—"}</td><td>${formatBRL(p.preco)}</td>
             <td><span class="badge ${p.ativo ? "badge-ok" : "badge-cancelado"}" style="cursor:pointer" data-toggle="${p.id}">${p.ativo ? "Ativo" : "Inativo"}</span></td>
-            <td><button class="btn-danger-outline" data-remover="${p.id}" title="Excluir" aria-label="Excluir produto"><i data-icon="trash" style="width:12px;height:12px;vertical-align:-1px"></i></button></td>
+            <td><button class="btn-danger-outline" data-remover="${p.id}" title="Excluir" aria-label="Excluir produto"><i data-icon="trash" class="icon-sm"></i></button></td>
           </tr>`).join("")}</tbody>
       </table></div>
     `;
@@ -852,7 +1229,7 @@ function renderProdutos(container) {
       desenhar();
     }));
     wrap.querySelectorAll("[data-remover]").forEach((btn) => btn.addEventListener("click", async () => {
-      if (!confirm("Excluir este produto?")) return;
+      if (!(await confirmarAcao("Excluir produto", "Tem certeza que deseja excluir este produto? Essa ação não pode ser desfeita."))) return;
       try {
         await store.produtos.remover(btn.dataset.remover);
         mostrarToast("Produto excluído.");
@@ -867,10 +1244,10 @@ function renderProdutos(container) {
       <div class="form-panel">
         <h4>Novo produto</h4>
         <div class="form-row">
-          <div class="form-field"><label for="p-nome">Nome</label><input id="p-nome" placeholder="Ex: Tapioca de frango" /></div>
-          <div class="form-field"><label for="p-categoria">Categoria</label><input id="p-categoria" placeholder="Ex: Tapiocas" /></div>
-          <div class="form-field"><label for="p-preco">Preço (R$)</label><input id="p-preco" type="number" min="0" step="0.01" placeholder="0,00" /></div>
-          <div class="form-field"><label for="p-imagem">URL da foto (opcional)</label><input id="p-imagem" placeholder="https://..." /></div>
+          <div class="form-field"><label for="p-nome">Nome</label><input id="p-nome" maxlength="80" placeholder="Ex: Tapioca de frango" /></div>
+          <div class="form-field"><label for="p-categoria">Categoria</label><input id="p-categoria" maxlength="50" placeholder="Ex: Tapiocas" /></div>
+          <div class="form-field"><label for="p-preco">Preço (R$)</label><input id="p-preco" type="number" min="0.01" max="99999" step="0.01" placeholder="0,00" /></div>
+          <div class="form-field"><label for="p-imagem">URL da foto (opcional)</label><input id="p-imagem" type="url" placeholder="https://..." /></div>
           <div class="form-field-checkbox"><input id="p-ativo" type="checkbox" checked /><label for="p-ativo">Ativo</label></div>
         </div>
         <div class="form-actions">
@@ -878,17 +1255,32 @@ function renderProdutos(container) {
           <button class="btn-secondary" id="btn-cancelar-produto">Cancelar</button>
         </div>
       </div>`;
+    const campoNome = document.getElementById("p-nome");
+    const campoPreco = document.getElementById("p-preco");
+    const campoImagem = document.getElementById("p-imagem");
+    limparInvalidoAoDigitar(campoNome, campoPreco, campoImagem);
     document.getElementById("btn-salvar-produto").addEventListener("click", async (evento) => {
-      const nome = document.getElementById("p-nome").value.trim();
-      const preco = Number(document.getElementById("p-preco").value);
-      if (!nome || !(preco > 0)) { mostrarToast("Preencha nome e um preço maior que zero."); return; }
+      const nome = campoNome.value.trim();
+      const preco = Number(campoPreco.value);
+      const imagemUrl = campoImagem.value.trim();
+      [campoNome, campoPreco, campoImagem].forEach(limparInvalido);
+
+      let valido = true;
+      if (!nome) { marcarInvalido(campoNome); valido = false; }
+      if (!numeroValido(preco, { min: 0.01, max: 99999 })) { marcarInvalido(campoPreco); valido = false; }
+      if (imagemUrl && !/^https?:\/\/.+/i.test(imagemUrl)) { marcarInvalido(campoImagem); valido = false; }
+      if (!valido) { mostrarToast("Verifique os campos destacados: nome, preço (maior que zero) e URL da foto."); return; }
+
       evento.target.disabled = true;
       try {
-        await store.produtos.adicionar({ nome, categoria: document.getElementById("p-categoria").value.trim(), preco, imagemUrl: document.getElementById("p-imagem").value.trim(), ativo: document.getElementById("p-ativo").checked });
+        await store.produtos.adicionar({ nome, categoria: document.getElementById("p-categoria").value.trim(), preco, imagemUrl, ativo: document.getElementById("p-ativo").checked });
         mostrarToast("Produto cadastrado.");
-      } catch (erro) { mostrarToast(erro.message); }
-      formWrap.innerHTML = "";
-      desenhar();
+        formWrap.innerHTML = "";
+        desenhar();
+      } catch (erro) {
+        mostrarToast(erro.message);
+        evento.target.disabled = false;
+      }
     });
     document.getElementById("btn-cancelar-produto").addEventListener("click", () => { formWrap.innerHTML = ""; });
   });
@@ -911,25 +1303,32 @@ function renderEstoque(container) {
     const lista = await store.estoque.listar();
     const wrap = document.getElementById("tabela-estoque-wrap");
     if (!lista.length) { wrap.innerHTML = emptyState("Estoque vazio", "Clique em “Novo item” para cadastrar o primeiro."); return; }
+    const listaOrdenada = lista.slice().sort((a, b) => {
+      const aBaixo = a.quantidade < a.estoqueMinimo;
+      const bBaixo = b.quantidade < b.estoqueMinimo;
+      if (aBaixo !== bBaixo) return aBaixo ? -1 : 1;
+      return a.nome.localeCompare(b.nome, "pt-BR");
+    });
     wrap.innerHTML = `
       <div class="table-wrap"><table>
         <thead><tr><th>Item</th><th>Quantidade</th><th>Unidade</th><th>Mínimo</th><th>Status</th><th></th></tr></thead>
-        <tbody>${lista.map((i) => `
-          <tr>
+        <tbody>${listaOrdenada.map((i) => `
+          <tr class="${i.quantidade < i.estoqueMinimo ? "linha-estoque-baixo" : ""}">
             <td>${escapeHtml(i.nome)}</td><td>${i.quantidade}</td><td>${escapeHtml(i.unidade)}</td><td>${i.estoqueMinimo}</td>
             <td><span class="badge ${i.quantidade < i.estoqueMinimo ? "badge-baixo" : "badge-ok"}">${i.quantidade < i.estoqueMinimo ? "Baixo" : "OK"}</span></td>
-            <td><button class="btn-danger-outline" data-remover="${i.id}" title="Excluir" aria-label="Excluir item do estoque"><i data-icon="trash" style="width:12px;height:12px;vertical-align:-1px"></i></button></td>
+            <td><button class="btn-danger-outline" data-remover="${i.id}" title="Excluir" aria-label="Excluir item do estoque"><i data-icon="trash" class="icon-sm"></i></button></td>
           </tr>`).join("")}</tbody>
       </table></div>
     `;
     renderIcons(wrap);
     wrap.querySelectorAll("[data-remover]").forEach((btn) => btn.addEventListener("click", async () => {
-      if (!confirm("Excluir este item do estoque?")) return;
+      if (!(await confirmarAcao("Excluir item do estoque", "Tem certeza que deseja excluir este item do estoque? Essa ação não pode ser desfeita."))) return;
       try {
         await store.estoque.remover(btn.dataset.remover);
         mostrarToast("Item excluído.");
       } catch (erro) { mostrarToast(erro.message); }
       desenhar();
+      atualizarBadgeEstoqueBaixo();
     }));
   }
 
@@ -939,29 +1338,46 @@ function renderEstoque(container) {
       <div class="form-panel">
         <h4>Novo item de estoque</h4>
         <div class="form-row">
-          <div class="form-field"><label for="e-nome">Item</label><input id="e-nome" placeholder="Ex: Farinha de tapioca" /></div>
-          <div class="form-field"><label for="e-quantidade">Quantidade</label><input id="e-quantidade" type="number" min="0" step="0.1" /></div>
-          <div class="form-field"><label for="e-unidade">Unidade</label><input id="e-unidade" placeholder="kg, un, L..." /></div>
-          <div class="form-field"><label for="e-minimo">Estoque mínimo</label><input id="e-minimo" type="number" min="0" step="0.1" /></div>
+          <div class="form-field"><label for="e-nome">Item</label><input id="e-nome" maxlength="60" placeholder="Ex: Farinha de tapioca" /></div>
+          <div class="form-field"><label for="e-quantidade">Quantidade</label><input id="e-quantidade" type="number" min="0" max="999999" step="0.1" /></div>
+          <div class="form-field"><label for="e-unidade">Unidade</label><input id="e-unidade" maxlength="10" placeholder="kg, un, L..." /></div>
+          <div class="form-field"><label for="e-minimo">Estoque mínimo</label><input id="e-minimo" type="number" min="0" max="999999" step="0.1" /></div>
         </div>
         <div class="form-actions">
           <button class="btn-primary" id="btn-salvar-estoque">Salvar</button>
           <button class="btn-secondary" id="btn-cancelar-estoque">Cancelar</button>
         </div>
       </div>`;
+    const campoNome = document.getElementById("e-nome");
+    const campoQtd = document.getElementById("e-quantidade");
+    const campoUnidade = document.getElementById("e-unidade");
+    const campoMinimo = document.getElementById("e-minimo");
+    limparInvalidoAoDigitar(campoNome, campoQtd, campoUnidade, campoMinimo);
     document.getElementById("btn-salvar-estoque").addEventListener("click", async (evento) => {
-      const nome = document.getElementById("e-nome").value.trim();
-      const quantidade = Number(document.getElementById("e-quantidade").value);
-      const unidade = document.getElementById("e-unidade").value.trim();
-      const estoqueMinimo = Number(document.getElementById("e-minimo").value || 0);
-      if (!nome || !unidade || isNaN(quantidade) || quantidade < 0 || estoqueMinimo < 0) { mostrarToast("Preencha item, quantidade e unidade com valores válidos."); return; }
+      const nome = campoNome.value.trim();
+      const quantidade = Number(campoQtd.value);
+      const unidade = campoUnidade.value.trim();
+      const estoqueMinimo = campoMinimo.value === "" ? 0 : Number(campoMinimo.value);
+      [campoNome, campoQtd, campoUnidade, campoMinimo].forEach(limparInvalido);
+
+      let valido = true;
+      if (!nome) { marcarInvalido(campoNome); valido = false; }
+      if (!unidade) { marcarInvalido(campoUnidade); valido = false; }
+      if (!numeroValido(quantidade, { min: 0, max: 999999 })) { marcarInvalido(campoQtd); valido = false; }
+      if (!numeroValido(estoqueMinimo, { min: 0, max: 999999 })) { marcarInvalido(campoMinimo); valido = false; }
+      if (!valido) { mostrarToast("Verifique os campos destacados: item, quantidade, unidade e mínimo."); return; }
+
       evento.target.disabled = true;
       try {
         await store.estoque.adicionar({ nome, quantidade, unidade, estoqueMinimo });
         mostrarToast("Item de estoque cadastrado.");
-      } catch (erro) { mostrarToast(erro.message); }
-      formWrap.innerHTML = "";
-      desenhar();
+        formWrap.innerHTML = "";
+        desenhar();
+        atualizarBadgeEstoqueBaixo();
+      } catch (erro) {
+        mostrarToast(erro.message);
+        evento.target.disabled = false;
+      }
     });
     document.getElementById("btn-cancelar-estoque").addEventListener("click", () => { formWrap.innerHTML = ""; });
   });
@@ -1146,9 +1562,11 @@ async function renderRelatorios(container) {
           <div><p>Receita</p><p>${formatBRL(r.vendasTotais)}</p></div>
           <div><p>Pedidos</p><p>${r.totalPedidos}</p></div>
         </div>
-        <div class="form-actions" style="margin-top:12px"><button class="btn-danger-outline" data-remover="${r.id}">Excluir</button></div>
+        <div class="form-actions" style="margin-top:12px"><button class="btn-danger-outline" data-remover="${r.id}"><i data-icon="trash" class="icon-sm"></i> Excluir</button></div>
       </div>`).join("");
+    renderIcons(wrap);
     wrap.querySelectorAll("[data-remover]").forEach((btn) => btn.addEventListener("click", async () => {
+      if (!(await confirmarAcao("Excluir relatório", "Tem certeza que deseja excluir este resumo salvo? Essa ação não pode ser desfeita."))) return;
       try { await store.relatorios.remover(btn.dataset.remover); } catch (erro) { mostrarToast(erro.message); }
       desenharListaSalvos();
     }));
@@ -1197,7 +1615,7 @@ function renderUsuarios(container) {
           <tr>
             <td>${escapeHtml(u.nome)}</td><td>${escapeHtml(u.email)}</td><td>${escapeHtml(u.papel.toUpperCase())}</td>
             <td><span class="badge ${u.ativo ? "badge-ok" : "badge-cancelado"}" style="cursor:pointer" data-toggle="${u.id}">${u.ativo ? "Ativo" : "Inativo"}</span></td>
-            <td><button class="btn-danger-outline" data-remover="${u.id}" title="Excluir" aria-label="Excluir usuário"><i data-icon="trash" style="width:12px;height:12px;vertical-align:-1px"></i></button></td>
+            <td><button class="btn-danger-outline" data-remover="${u.id}" title="Excluir" aria-label="Excluir usuário"><i data-icon="trash" class="icon-sm"></i></button></td>
           </tr>`).join("")}</tbody>
       </table></div>
     `;
@@ -1207,7 +1625,7 @@ function renderUsuarios(container) {
       desenhar();
     }));
     wrap.querySelectorAll("[data-remover]").forEach((btn) => btn.addEventListener("click", async () => {
-      if (!confirm("Excluir usuário?")) return;
+      if (!(await confirmarAcao("Excluir usuário", "Tem certeza que deseja excluir este usuário? Essa ação não pode ser desfeita."))) return;
       try {
         await store.usuarios.remover(btn.dataset.remover);
         mostrarToast("Usuário excluído.");
@@ -1222,8 +1640,8 @@ function renderUsuarios(container) {
       <div class="form-panel">
         <h4>Novo usuário</h4>
         <div class="form-row">
-          <div class="form-field"><label for="u-nome">Nome</label><input id="u-nome" /></div>
-          <div class="form-field"><label for="u-email">E-mail</label><input id="u-email" type="email" /></div>
+          <div class="form-field"><label for="u-nome">Nome</label><input id="u-nome" maxlength="80" /></div>
+          <div class="form-field"><label for="u-email">E-mail</label><input id="u-email" type="email" maxlength="120" /></div>
           <div class="form-field"><label for="u-papel">Papel</label>
             <select id="u-papel">
               <option value="admin">Administrador (Total)</option>
@@ -1239,18 +1657,29 @@ function renderUsuarios(container) {
           <button class="btn-secondary" id="btn-cancelar-usuario">Cancelar</button>
         </div>
       </div>`;
+    const campoNome = document.getElementById("u-nome");
+    const campoEmail = document.getElementById("u-email");
+    limparInvalidoAoDigitar(campoNome, campoEmail);
     document.getElementById("btn-salvar-usuario").addEventListener("click", async (evento) => {
-      const nome = document.getElementById("u-nome").value.trim();
-      const email = document.getElementById("u-email").value.trim();
-      if (!nome || !email) { mostrarToast("Preencha todos os campos."); return; }
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { mostrarToast("Informe um e-mail válido."); return; }
+      const nome = campoNome.value.trim();
+      const email = campoEmail.value.trim();
+      [campoNome, campoEmail].forEach(limparInvalido);
+
+      let valido = true;
+      if (!nome) { marcarInvalido(campoNome); valido = false; }
+      if (!email || !REGEX_EMAIL.test(email)) { marcarInvalido(campoEmail); valido = false; }
+      if (!valido) { mostrarToast("Verifique os campos destacados: nome e e-mail válido."); return; }
+
       evento.target.disabled = true;
       try {
         await store.usuarios.adicionar({ nome, email, papel: document.getElementById("u-papel").value, ativo: document.getElementById("u-ativo").checked });
         mostrarToast("Cadastrado com a senha padrão '123456'.");
-      } catch (erro) { mostrarToast(erro.message); }
-      formWrap.innerHTML = "";
-      desenhar();
+        formWrap.innerHTML = "";
+        desenhar();
+      } catch (erro) {
+        mostrarToast(erro.message);
+        evento.target.disabled = false;
+      }
     });
     document.getElementById("btn-cancelar-usuario").addEventListener("click", () => { formWrap.innerHTML = ""; });
   });
@@ -1266,21 +1695,33 @@ async function renderConfiguracoes(container) {
   container.innerHTML = `
     <form class="form-panel" id="form-config" style="max-width:480px">
       <h4>Dados da loja</h4>
-      <div class="form-field" style="margin-bottom:12px"><label for="c-nome">Nome da loja</label><input id="c-nome" value="${escapeHtml(dados.nomeLoja)}" /></div>
-      <div class="form-field" style="margin-bottom:12px"><label for="c-cnpj">CNPJ</label><input id="c-cnpj" value="${escapeHtml(dados.cnpj)}" /></div>
-      <div class="form-field" style="margin-bottom:12px"><label for="c-telefone">Telefone</label><input id="c-telefone" value="${escapeHtml(dados.telefone)}" /></div>
-      <div class="form-field" style="margin-bottom:16px"><label for="c-email">E-mail</label><input id="c-email" value="${escapeHtml(dados.email)}" /></div>
+      <div class="form-field" style="margin-bottom:12px"><label for="c-nome">Nome da loja</label><input id="c-nome" maxlength="80" value="${escapeHtml(dados.nomeLoja)}" /></div>
+      <div class="form-field" style="margin-bottom:12px"><label for="c-cnpj">CNPJ</label><input id="c-cnpj" maxlength="18" value="${escapeHtml(dados.cnpj)}" /></div>
+      <div class="form-field" style="margin-bottom:12px"><label for="c-telefone">Telefone</label><input id="c-telefone" maxlength="20" value="${escapeHtml(dados.telefone)}" /></div>
+      <div class="form-field" style="margin-bottom:16px"><label for="c-email">E-mail</label><input id="c-email" type="email" maxlength="120" value="${escapeHtml(dados.email)}" /></div>
       <button type="submit" class="btn-primary">Salvar alterações</button>
     </form>
   `;
+  const campoNome = document.getElementById("c-nome");
+  const campoEmail = document.getElementById("c-email");
+  limparInvalidoAoDigitar(campoNome, campoEmail);
   document.getElementById("form-config").addEventListener("submit", async (evento) => {
     evento.preventDefault();
+    const nomeLoja = campoNome.value.trim();
+    const email = campoEmail.value.trim();
+    [campoNome, campoEmail].forEach(limparInvalido);
+
+    let valido = true;
+    if (!nomeLoja) { marcarInvalido(campoNome); valido = false; }
+    if (email && !REGEX_EMAIL.test(email)) { marcarInvalido(campoEmail); valido = false; }
+    if (!valido) { mostrarToast("Verifique os campos destacados: nome da loja e e-mail válido."); return; }
+
     try {
       await store.configuracoes.salvar({
-        nomeLoja: document.getElementById("c-nome").value.trim(),
+        nomeLoja,
         cnpj: document.getElementById("c-cnpj").value.trim(),
         telefone: document.getElementById("c-telefone").value.trim(),
-        email: document.getElementById("c-email").value.trim(),
+        email,
       });
       mostrarToast("Configurações salvas.");
     } catch (erro) { mostrarToast(erro.message); }
@@ -1311,7 +1752,17 @@ async function atualizarBadgePendentes() {
   badge.classList.toggle("visivel", pendentes > 0);
 }
 
+async function atualizarBadgeEstoqueBaixo() {
+  const badge = document.getElementById("badge-estoque-baixo");
+  if (!badge) return;
+  const itensEstoque = await store.estoque.listar();
+  const baixos = itensEstoque.filter((i) => i.quantidade < i.estoqueMinimo).length;
+  badge.textContent = baixos;
+  badge.classList.toggle("visivel", baixos > 0);
+}
+
 document.addEventListener("DOMContentLoaded", () => {
+  connBanner.init();
   const menuEl = document.getElementById("menu");
   const tituloEl = document.getElementById("page-title");
   const subtituloEl = document.getElementById("page-subtitle");
@@ -1332,17 +1783,34 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll(".menu-item[data-page]").forEach((btn) => btn.classList.toggle("active", btn.dataset.page === id));
     tituloEl.textContent = pagina.titulo;
     subtituloEl.textContent = pagina.subtitulo;
+    corpoEl.innerHTML = paginaCarregandoHTML();
     pagina.render(corpoEl);
     atualizarBadgePendentes();
+    atualizarBadgeEstoqueBaixo();
     window.location.hash = id;
   }
   window.__irParaPedidos = () => irParaPagina("pedidos");
+  window.__irParaEstoque = () => irParaPagina("estoque");
 
   async function tentarLogin() {
     const btnEntrar = document.getElementById("btn-entrar");
-    const email = document.getElementById("login-email").value.trim();
-    const senha = document.getElementById("login-senha").value.trim();
-    if (!email || !senha) { mostrarToast("Informe e-mail e senha."); return; }
+    const campoEmail = document.getElementById("login-email");
+    const campoSenha = document.getElementById("login-senha");
+    const email = campoEmail.value.trim();
+    const senha = campoSenha.value.trim();
+    limparInvalido(campoEmail);
+    limparInvalido(campoSenha);
+    if (!email || !senha) {
+      if (!email) marcarInvalido(campoEmail);
+      if (!senha) marcarInvalido(campoSenha);
+      mostrarToast("Informe e-mail e senha.");
+      return;
+    }
+    if (!REGEX_EMAIL.test(email)) {
+      marcarInvalido(campoEmail);
+      mostrarToast("Informe um e-mail válido.");
+      return;
+    }
     btnEntrar.disabled = true;
     const textoOriginal = btnEntrar.textContent;
     btnEntrar.textContent = "Entrando...";
@@ -1354,6 +1822,7 @@ document.addEventListener("DOMContentLoaded", () => {
       btnEntrar.textContent = textoOriginal;
     }
   }
+  limparInvalidoAoDigitar(document.getElementById("login-email"), document.getElementById("login-senha"));
   document.getElementById("btn-entrar").addEventListener("click", tentarLogin);
   document.getElementById("login-senha").addEventListener("keydown", (evento) => {
     if (evento.key === "Enter") tentarLogin();
@@ -1373,6 +1842,7 @@ document.addEventListener("DOMContentLoaded", () => {
     Auth.validarAcessoMenu();
     renderIcons();
     atualizarBadgePendentes();
+    atualizarBadgeEstoqueBaixo();
 
     let inicial = window.location.hash.replace("#", "") || "painel";
     if (usuarioLogado.papel === "cozinha") { inicial = "pedidos"; }
@@ -1423,7 +1893,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (paginaAtivaId === "produtos") renderProdutos(corpoEl);
   });
   socket.on("estoque:atualizado", () => {
+    atualizarBadgeEstoqueBaixo();
     if (paginaAtivaId === "estoque") renderEstoque(corpoEl);
+    if (paginaAtivaId === "painel") renderPainel(corpoEl);
   });
   socket.on("configuracoes:atualizada", () => {
     if (paginaAtivaId === "configuracoes") renderConfiguracoes(corpoEl);

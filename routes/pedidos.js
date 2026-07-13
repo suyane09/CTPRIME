@@ -13,15 +13,25 @@ function paraSaida(p) {
 const MAX_ITENS_POR_PEDIDO = 100;
 const MAX_QUANTIDADE_POR_ITEM = 500;
 
+// Guarda e busca o telefone sempre só com dígitos, pra "11 98888-7777",
+// "(11)988887777" e "11988887777" caírem tudo na mesma chave de consulta.
+function normalizarTelefone(telefone) {
+  return String(telefone || "").replace(/\D/g, "");
+}
+
 // Pública — o cardápio do cliente cria pedidos sem precisar de login
 router.post("/", (req, res) => {
-  const { cliente, itens, formaPagamento, trocoPara } = req.body || {};
+  const { cliente, telefone, itens, formaPagamento, trocoPara } = req.body || {};
   // Observação: "total", "precoUnit" e "produtoNome" enviados pelo cliente
   // são IGNORADOS de propósito — nunca confie em preço/total vindo do front-end.
   // Tudo é recalculado abaixo a partir do banco de dados.
 
   if (typeof cliente !== "string" || !cliente.trim()) {
     return res.status(400).json({ erro: "Informe o nome do cliente." });
+  }
+  const telefoneNormalizado = normalizarTelefone(telefone);
+  if (telefoneNormalizado.length < 10 || telefoneNormalizado.length > 11) {
+    return res.status(400).json({ erro: "Informe um telefone válido com DDD." });
   }
   if (!Array.isArray(itens) || itens.length === 0 || itens.length > MAX_ITENS_POR_PEDIDO) {
     return res.status(400).json({ erro: "Informe ao menos um item válido no pedido." });
@@ -74,9 +84,9 @@ router.post("/", (req, res) => {
 
   const id = randomUUID();
   db.prepare(`
-    INSERT INTO pedidos (id, cliente, itens, total, status, formaPagamento, trocoPara)
-    VALUES (?, ?, ?, ?, 'pendente', ?, ?)
-  `).run(id, cliente.trim().slice(0, 120), JSON.stringify(itensValidados), total, formaPagamento, trocoParaNumero);
+    INSERT INTO pedidos (id, cliente, telefone, itens, total, status, formaPagamento, trocoPara)
+    VALUES (?, ?, ?, ?, ?, 'pendente', ?, ?)
+  `).run(id, cliente.trim().slice(0, 120), telefoneNormalizado, JSON.stringify(itensValidados), total, formaPagamento, trocoParaNumero);
 
   const pedido = paraSaida(db.prepare("SELECT * FROM pedidos WHERE id = ?").get(id));
   req.app.get("io").emit("pedido:novo", pedido);
@@ -86,6 +96,29 @@ router.post("/", (req, res) => {
 router.get("/", autenticar, (req, res) => {
   const lista = db.prepare("SELECT * FROM pedidos ORDER BY criadoEm DESC").all();
   res.json(lista.map(paraSaida));
+});
+
+// Pública — o cliente busca o próprio histórico de pedidos informando o telefone
+// usado na hora de pedir. Funciona em qualquer aparelho (não depende do navegador
+// onde o pedido foi feito). Como não existe cadastro/senha, isso não é dado sigiloso
+// de acesso — é só uma forma de o cliente reencontrar os próprios pedidos.
+router.get("/por-telefone/:telefone", (req, res) => {
+  const telefoneNormalizado = normalizarTelefone(req.params.telefone);
+  if (telefoneNormalizado.length < 10 || telefoneNormalizado.length > 11) {
+    return res.status(400).json({ erro: "Informe um telefone válido com DDD." });
+  }
+  const lista = db.prepare("SELECT * FROM pedidos WHERE telefone = ? ORDER BY criadoEm DESC LIMIT 30")
+    .all(telefoneNormalizado);
+  res.json(lista.map(paraSaida));
+});
+
+// Pública — o cliente acompanha o andamento do próprio pedido pelo ID.
+// Não exige login: o ID é um UUID imprevisível (gerado no POST acima) e
+// funciona como uma "senha" de consulta — só quem recebeu o ID consegue ver o pedido.
+router.get("/:id/status", (req, res) => {
+  const pedido = db.prepare("SELECT * FROM pedidos WHERE id = ?").get(req.params.id);
+  if (!pedido) return res.status(404).json({ erro: "Pedido não encontrado." });
+  res.json(paraSaida(pedido));
 });
 
 router.patch("/:id/status", autenticar, (req, res) => {

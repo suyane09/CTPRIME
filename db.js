@@ -44,6 +44,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS pedidos (
     id TEXT PRIMARY KEY,
     cliente TEXT NOT NULL,
+    telefone TEXT,
     itens TEXT NOT NULL,
     total REAL NOT NULL,
     status TEXT NOT NULL DEFAULT 'pendente',
@@ -71,6 +72,16 @@ db.exec(`
   );
 `);
 
+// Migração — bancos criados antes da coluna "telefone" existir não a recebem
+// automaticamente pelo CREATE TABLE IF NOT EXISTS acima, então verificamos e
+// adicionamos manualmente se for o caso (sem apagar nenhum dado existente).
+const colunasPedidos = db.prepare("PRAGMA table_info(pedidos)").all().map((c) => c.name);
+if (!colunasPedidos.includes("telefone")) {
+  db.exec("ALTER TABLE pedidos ADD COLUMN telefone TEXT");
+  console.log("✔ Coluna 'telefone' adicionada à tabela pedidos");
+}
+db.exec("CREATE INDEX IF NOT EXISTS idx_pedidos_telefone ON pedidos (telefone)");
+
 // Seed inicial — só roda se as tabelas estiverem vazias
 const totalUsuarios = db.prepare("SELECT COUNT(*) AS n FROM usuarios").get().n;
 if (totalUsuarios === 0) {
@@ -94,4 +105,3 @@ if (totalConfig === 0) {
 }
 
 module.exports = db;
-
