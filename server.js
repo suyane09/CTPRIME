@@ -4,9 +4,9 @@ const express = require("express");
 const cors = require("cors");
 const http = require("http");
 const { Server } = require("socket.io");
-
+const registrarRotaUpload = require("./rotas-upload-imagem");
 require("./db"); // garante que o banco e o seed inicial existam antes de tudo
-
+const { autenticar } = require("./middleware/auth");
 const app = express();
 const servidorHttp = http.createServer(app);
 const io = new Server(servidorHttp, { cors: { origin: "*" } });
@@ -23,7 +23,8 @@ app.use("/api/pedidos", require("./routes/pedidos"));
 app.use("/api/usuarios", require("./routes/usuarios"));
 app.use("/api/relatorios", require("./routes/relatorios"));
 app.use("/api/configuracoes", require("./routes/configuracoes"));
-
+registrarRotaUpload(app, autenticar); // troque "autenticar" pelo nome que você achou no Passo 4
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.get("/api/health", (req, res) => res.json({ status: "ok", horario: new Date().toISOString() }));
 
 // -------- Frontend estático (index.html do painel + cardapio.html) --------

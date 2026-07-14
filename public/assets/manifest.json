@@ -1,0 +1,21 @@
+{
+  "name": "CT Prime",
+  "short_name": "CT Prime",
+  "description": "Cardápio digital do CT Prime — faça seu pedido online.",
+  "start_url": "/cardapio.html",
+  "display": "standalone",
+  "background_color": "#f6f4ee",
+  "theme_color": "#121210",
+  "icons": [
+    {
+      "src": "/assets/img/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/img/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

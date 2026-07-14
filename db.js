@@ -29,6 +29,11 @@ db.exec(`
     preco REAL NOT NULL,
     imagemUrl TEXT,
     ativo INTEGER NOT NULL DEFAULT 1,
+    calorias REAL,
+    porcaoGramas REAL,
+    proteinas REAL,
+    carboidratos REAL,
+    gorduras REAL,
     criadoEm TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
@@ -81,6 +86,18 @@ if (!colunasPedidos.includes("telefone")) {
   console.log("✔ Coluna 'telefone' adicionada à tabela pedidos");
 }
 db.exec("CREATE INDEX IF NOT EXISTS idx_pedidos_telefone ON pedidos (telefone)");
+
+// Migração — bancos criados antes das colunas nutricionais existirem não as
+// recebem automaticamente pelo CREATE TABLE IF NOT EXISTS acima, então
+// verificamos e adicionamos manualmente se for o caso (sem apagar dados).
+const colunasProdutos = db.prepare("PRAGMA table_info(produtos)").all().map((c) => c.name);
+const colunasNutricionaisNovas = ["calorias", "porcaoGramas", "proteinas", "carboidratos", "gorduras"];
+for (const coluna of colunasNutricionaisNovas) {
+  if (!colunasProdutos.includes(coluna)) {
+    db.exec(`ALTER TABLE produtos ADD COLUMN ${coluna} REAL`);
+    console.log(`✔ Coluna '${coluna}' adicionada à tabela produtos`);
+  }
+}
 
 // Seed inicial — só roda se as tabelas estiverem vazias
 const totalUsuarios = db.prepare("SELECT COUNT(*) AS n FROM usuarios").get().n;

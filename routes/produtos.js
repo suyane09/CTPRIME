@@ -16,15 +16,18 @@ router.get("/", (req, res) => {
 });
 
 router.post("/", autenticar, permitirPapeis("admin", "gerente"), (req, res) => {
-  const { nome, categoria, preco, imagemUrl, ativo } = req.body || {};
+  const { nome, categoria, preco, imagemUrl, ativo, calorias, porcaoGramas, proteinas, carboidratos, gorduras } = req.body || {};
   if (!nome || !preco) {
     return res.status(400).json({ erro: "Informe nome e preço do produto." });
   }
   const id = randomUUID();
   db.prepare(`
-    INSERT INTO produtos (id, nome, categoria, preco, imagemUrl, ativo)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `).run(id, nome, categoria || null, Number(preco), imagemUrl || null, ativo === false ? 0 : 1);
+    INSERT INTO produtos (id, nome, categoria, preco, imagemUrl, ativo, calorias, porcaoGramas, proteinas, carboidratos, gorduras)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    id, nome, categoria || null, Number(preco), imagemUrl || null, ativo === false ? 0 : 1,
+    calorias ?? null, porcaoGramas ?? null, proteinas ?? null, carboidratos ?? null, gorduras ?? null
+  );
 
   const produto = paraSaida(db.prepare("SELECT * FROM produtos WHERE id = ?").get(id));
   req.app.get("io").emit("produtos:atualizado");
@@ -41,11 +44,22 @@ router.patch("/:id", autenticar, permitirPapeis("admin", "gerente"), (req, res) 
     preco: req.body.preco !== undefined ? Number(req.body.preco) : existente.preco,
     imagemUrl: req.body.imagemUrl ?? existente.imagemUrl,
     ativo: req.body.ativo !== undefined ? (req.body.ativo ? 1 : 0) : existente.ativo,
+    calorias: req.body.calorias !== undefined ? req.body.calorias : existente.calorias,
+    porcaoGramas: req.body.porcaoGramas !== undefined ? req.body.porcaoGramas : existente.porcaoGramas,
+    proteinas: req.body.proteinas !== undefined ? req.body.proteinas : existente.proteinas,
+    carboidratos: req.body.carboidratos !== undefined ? req.body.carboidratos : existente.carboidratos,
+    gorduras: req.body.gorduras !== undefined ? req.body.gorduras : existente.gorduras,
   };
 
   db.prepare(`
-    UPDATE produtos SET nome=?, categoria=?, preco=?, imagemUrl=?, ativo=? WHERE id=?
-  `).run(dados.nome, dados.categoria, dados.preco, dados.imagemUrl, dados.ativo, req.params.id);
+    UPDATE produtos SET nome=?, categoria=?, preco=?, imagemUrl=?, ativo=?,
+      calorias=?, porcaoGramas=?, proteinas=?, carboidratos=?, gorduras=?
+    WHERE id=?
+  `).run(
+    dados.nome, dados.categoria, dados.preco, dados.imagemUrl, dados.ativo,
+    dados.calorias, dados.porcaoGramas, dados.proteinas, dados.carboidratos, dados.gorduras,
+    req.params.id
+  );
 
   const produto = paraSaida(db.prepare("SELECT * FROM produtos WHERE id = ?").get(req.params.id));
   req.app.get("io").emit("produtos:atualizado");
