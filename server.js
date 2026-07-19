@@ -3,17 +3,46 @@ const path = require("path");
 const os = require("os");
 const express = require("express");
 const cors = require("cors");
+const helmet = require("helmet");
 const http = require("http");
 const { Server } = require("socket.io");
 const registrarRotaUpload = require("./rotas-upload-imagem");
 require("./db"); // garante que o banco e o seed inicial existam antes de tudo
 const { autenticar } = require("./middleware/auth");
+
+// -------- Falha rápido se segredos essenciais não estiverem configurados --------
+// Rodar sem JWT_SECRET (ou com um valor padrão fraco) permitiria forjar tokens
+// de qualquer usuário, inclusive admin. Preferimos não subir o servidor a
+// rodar inseguro.
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 16) {
+  console.error(
+    "❌ JWT_SECRET ausente ou muito curto. Defina uma variável de ambiente " +
+      "JWT_SECRET forte (32+ caracteres aleatórios) antes de iniciar o servidor. " +
+      "Veja o .env.example."
+  );
+  process.exit(1);
+}
+
+// -------- Origens permitidas (CORS) --------
+// Antes o CORS aceitava qualquer origem ("*"). Isso é razoável só enquanto não
+// há cookies/sessão envolvidos, mas mesmo assim é melhor restringir às origens
+// conhecidas do seu painel/cardápio em produção via ALLOWED_ORIGINS no .env
+// (separadas por vírgula). Sem a variável, cai de volta pra "*" só em dev.
+const origensPermitidas = (process.env.ALLOWED_ORIGINS || "")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+const opcoesCors = origensPermitidas.length
+  ? { origin: origensPermitidas }
+  : { origin: "*" };
+
 const app = express();
 const servidorHttp = http.createServer(app);
-const io = new Server(servidorHttp, { cors: { origin: "*" } });
+const io = new Server(servidorHttp, { cors: opcoesCors });
 
 app.set("io", io);
-app.use(cors());
+app.use(helmet());
+app.use(cors(opcoesCors));
 app.use(express.json());
 
 // -------- Rotas da API --------

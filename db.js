@@ -157,20 +157,43 @@ for (const coluna of colunasNutricionaisNovas) {
 }
 
 // Seed inicial — só roda se as tabelas estiverem vazias
+// Antes usava a senha fixa "123456" pra todo mundo, inclusive o admin — em
+// produção isso é uma porta aberta pra qualquer um logar como admin no
+// primeiro dia. Agora cada usuário do seed recebe uma senha aleatória
+// diferente, mostrada UMA VEZ no console pra você trocar e nunca mais precisar
+// dela (recomendação: troque assim que logar pela primeira vez).
+function gerarSenhaAleatoria(tamanho = 12) {
+  const caracteres = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  let senha = "";
+  for (let i = 0; i < tamanho; i++) {
+    senha += caracteres[Math.floor(Math.random() * caracteres.length)];
+  }
+  return senha;
+}
+
 const totalUsuarios = db.prepare("SELECT COUNT(*) AS n FROM usuarios").get().n;
 if (totalUsuarios === 0) {
   const inserir = db.prepare(`
     INSERT INTO usuarios (id, nome, email, senha_hash, papel, ativo)
     VALUES (?, ?, ?, ?, ?, 1)
   `);
-  const senhaPadraoHash = bcrypt.hashSync("123456", 10);
+  const contasIniciais = [
+    { nome: "Admin Master", email: "admin@ctprime.com", papel: "admin" },
+    { nome: "Carlos Atendente", email: "func@ctprime.com", papel: "gerente" },
+    { nome: "Equipe Cozinha", email: "cozinha@ctprime.com", papel: "cozinha" },
+  ];
+  const senhasGeradas = [];
   const seed = db.transaction(() => {
-    inserir.run(randomUUID(), "Admin Master", "admin@ctprime.com", senhaPadraoHash, "admin");
-    inserir.run(randomUUID(), "Carlos Atendente", "func@ctprime.com", senhaPadraoHash, "gerente");
-    inserir.run(randomUUID(), "Equipe Cozinha", "cozinha@ctprime.com", senhaPadraoHash, "cozinha");
+    for (const conta of contasIniciais) {
+      const senha = gerarSenhaAleatoria();
+      const senhaHash = bcrypt.hashSync(senha, 10);
+      inserir.run(randomUUID(), conta.nome, conta.email, senhaHash, conta.papel);
+      senhasGeradas.push({ ...conta, senha });
+    }
   });
   seed();
-  console.log("✔ Usuários padrão criados (senha: 123456)");
+  console.log("✔ Usuários padrão criados. Anote as senhas abaixo e troque no primeiro login:");
+  senhasGeradas.forEach((c) => console.log(`   ${c.email} (${c.papel}): ${c.senha}`));
 }
 
 const totalConfig = db.prepare("SELECT COUNT(*) AS n FROM configuracoes").get().n;
