@@ -41,7 +41,18 @@ const servidorHttp = http.createServer(app);
 const io = new Server(servidorHttp, { cors: opcoesCors });
 
 app.set("io", io);
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+        "upgrade-insecure-requests": null,
+        "script-src": ["'self'", "'unsafe-inline'"],
+        "style-src": ["'self'", "'unsafe-inline'"],
+      },
+    },
+  })
+);
 app.use(cors(opcoesCors));
 app.use(express.json());
 

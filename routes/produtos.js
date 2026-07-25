@@ -1,9 +1,56 @@
 const express = require("express");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
 const { randomUUID } = require("crypto");
 const db = require("../db");
 const { autenticar, permitirPapeis } = require("../middleware/auth");
 
 const router = express.Router();
+
+// ===================== UPLOAD DE IMAGEM DO PRODUTO =====================
+// Salva o arquivo de verdade no servidor (em vez de depender de um link
+// externo, que pode ser bloqueado, mudar ou sumir a qualquer momento).
+
+const PASTA_UPLOADS = path.join(__dirname, "..", "uploads", "produtos");
+fs.mkdirSync(PASTA_UPLOADS, { recursive: true });
+
+const TIPOS_AUTORIZADOS = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, PASTA_UPLOADS),
+  filename: (req, file, cb) => {
+    const extensao = path.extname(file.originalname || "").toLowerCase() || ".jpg";
+    cb(null, `${randomUUID()}${extensao}`);
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB é suficiente pra foto de produto
+  fileFilter: (req, file, cb) => {
+    if (!TIPOS_AUTORIZADOS.has(file.mimetype)) {
+      return cb(new Error("Formato de imagem não suportado. Use JPG, PNG, WEBP ou GIF."));
+    }
+    cb(null, true);
+  },
+});
+
+// Serve os arquivos salvos publicamente. Como este router já é montado em
+// /api/produtos no app.js, a imagem fica acessível em:
+// /api/produtos/imagens/<arquivo> — nenhuma outra mudança é necessária no app.js.
+router.use("/imagens", express.static(PASTA_UPLOADS));
+
+// Envia o arquivo e devolve a URL própria e estável pra usar como imagemUrl.
+router.post("/upload-imagem", autenticar, permitirPapeis("admin", "gerente"), (req, res) => {
+  upload.single("imagem")(req, res, (erro) => {
+    if (erro) return res.status(400).json({ erro: erro.message || "Não foi possível enviar a imagem." });
+    if (!req.file) return res.status(400).json({ erro: "Nenhuma imagem enviada." });
+
+    const urlPublica = `/api/produtos/imagens/${req.file.filename}`;
+    res.status(201).json({ url: urlPublica });
+  });
+});
 
 function paraSaida(p) {
   return { ...p, ativo: !!p.ativo };

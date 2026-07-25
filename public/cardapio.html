@@ -3,20 +3,20 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<title>CT Prime — Cardápio</title>
-<meta name="description" content="Cardápio digital do CT Prime. Veja nossos pratos, faça seu pedido online e escolha a forma de pagamento — Pix, cartão ou dinheiro." />
+<title>CT Prime — Loja Completa</title>
+<meta name="description" content="CT Prime: sua loja completa online. Alimentação, suplementos, eletrônicos e muito mais, com pedido rápido e várias formas de pagamento — Pix, cartão ou dinheiro." />
 <meta name="theme-color" content="#121210" />
 
 <meta property="og:type" content="website" />
-<meta property="og:title" content="CT Prime — Cardápio" />
-<meta property="og:description" content="Veja nosso cardápio completo e faça seu pedido online em poucos cliques." />
+<meta property="og:title" content="CT Prime — Loja Completa" />
+<meta property="og:description" content="Alimentação, suplementos, eletrônicos e muito mais em um só lugar. Faça seu pedido online em poucos cliques." />
 <meta property="og:locale" content="pt_BR" />
 <meta property="og:image" content="/assets/img/og-image.jpg" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="CT Prime — Cardápio" />
-<meta name="twitter:description" content="Veja nosso cardápio completo e faça seu pedido online em poucos cliques." />
+<meta name="twitter:title" content="CT Prime — Loja Completa" />
+<meta name="twitter:description" content="Alimentação, suplementos, eletrônicos e muito mais em um só lugar. Faça seu pedido online em poucos cliques." />
 <meta name="twitter:image" content="/assets/img/og-image.jpg" />
 
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23141210'/%3E%3Ctext x='32' y='42' font-family='Georgia,serif' font-size='28' font-weight='700' fill='%23D4A72C' text-anchor='middle'%3ECT%3C/text%3E%3C/svg%3E" />
@@ -209,8 +209,22 @@ a { text-decoration: none; color: inherit; }
   background: linear-gradient(150deg, #2a2717, #14130c);
   box-shadow: 0 30px 60px rgba(0,0,0,0.45);
 }
-.hero-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hero-foto img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .hero-foto .sem-foto { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 70px; }
+.hero-foto-slide {
+  position: absolute; inset: 0; opacity: 0; transition: opacity 0.9s ease;
+  pointer-events: none;
+}
+.hero-foto-slide.ativa { opacity: 1; pointer-events: auto; }
+.hero-foto-slide img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.hero-foto-dots {
+  position: absolute; top: 14px; left: 14px; z-index: 2; display: flex; gap: 6px;
+}
+.hero-foto-dots .ponto-slide {
+  width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.35);
+  transition: background 0.3s ease, transform 0.3s ease;
+}
+.hero-foto-dots .ponto-slide.ativo { background: var(--accent-light); transform: scale(1.25); }
 .hero-logo-badge {
   position: absolute; top: 16px; right: 16px; width: 62px; height: 62px; border-radius: 50%; overflow: hidden;
   box-shadow: 0 8px 22px rgba(0,0,0,0.4); border: 2px solid rgba(255,255,255,0.25);
@@ -334,6 +348,11 @@ a { text-decoration: none; color: inherit; }
 .badge-vegetariano { background: linear-gradient(135deg, #8bd35f, #4c9c1f); }
 .badge-picante { background: linear-gradient(135deg, #ff8a3d, #d9480f); }
 .badge-sem_gluten { background: linear-gradient(135deg, #b98af0, #7a3fc9); }
+.badge-original { background: linear-gradient(135deg, #6fc3e6, #1f7fa8); }
+.badge-importado { background: linear-gradient(135deg, #9aa5b1, #4c5866); }
+.badge-garantia { background: linear-gradient(135deg, var(--accent-light), var(--accent-dark)); color: #14140f; }
+.badge-exclusivo { background: linear-gradient(135deg, #2f2f28, #14140f); }
+.badge-ultimas_unidades { background: linear-gradient(135deg, #ff6b6b, #c81e1e); }
 
 .card-corpo { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 5px; flex: 1; }
 .card-nome { font-size: 14.5px; font-weight: 700; margin: 0; line-height: 1.35; letter-spacing: -0.1px; cursor: pointer; }
@@ -628,7 +647,7 @@ a { text-decoration: none; color: inherit; }
 
 /* ===================== MODAL DE DETALHE DO PRODUTO ===================== */
 .produto-detalhe-foto { position: relative; width: 100%; height: 220px; border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 18px; background: linear-gradient(150deg, #f4e6b3, #e9d086); display: flex; align-items: center; justify-content: center; }
-.produto-detalhe-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.produto-detalhe-foto img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .produto-detalhe-inicial { font-size: 54px; font-weight: 800; color: #8a7433; font-family: "Sora", sans-serif; }
 .produto-detalhe-foto .card-badges { top: 12px; left: 12px; bottom: auto; }
 
@@ -935,7 +954,7 @@ body:has(.conn-banner.visivel) .nav { margin-top: 38px; }
 
   <div class="conn-banner" id="conn-banner" role="status" aria-live="assertive">
     <span class="conn-banner-dot"></span>
-    <span id="conn-banner-texto">Você está offline. Mostrando o último cardápio salvo.</span>
+    <span id="conn-banner-texto">Você está offline. Mostrando o último catálogo salvo.</span>
   </div>
 
   <main class="conteudo-principal">
@@ -945,12 +964,13 @@ body:has(.conn-banner.visivel) .nav { margin-top: 38px; }
         <span class="logo-img"><img src="/assets/img/logo.png" alt="CT Prime" /></span>
         <span>
           <p class="marca-nome" id="nome-loja" style="margin:0;">CT Prime</p>
-          <p class="marca-sub" style="margin:0;">Peça online</p>
+          <p class="marca-sub" style="margin:0;">Loja completa</p>
         </span>
       </a>
       <nav class="nav-links">
         <a href="#topo" class="ativo">Início</a>
-        <a href="#cardapio-secao">Cardápio</a>
+        <a href="#categorias-secao">Categorias</a>
+        <a href="#cardapio-secao">Produtos</a>
          <a href="#rodape-secao">Contato</a>
         
       </nav>
@@ -974,30 +994,30 @@ body:has(.conn-banner.visivel) .nav { margin-top: 38px; }
     <nav class="nav-mobile-menu" id="nav-mobile-menu">
       <a href="#topo">Início</a>
       <a href="#categorias-secao">Categorias</a>
-      <a href="#cardapio-secao">Cardápio</a>
+      <a href="#cardapio-secao">Produtos</a>
     </nav>
   </header>
 
   <section class="hero">
     <div class="hero-inner">
       <div>
-        <span class="selo">Peça online</span>
-        <h1>Monte seu pedido<br><span>na hora que quiser</span></h1>
+        <span class="selo">Loja completa</span>
+        <h1>Tudo que você precisa<br><span>em um só lugar</span></h1>
         <div class="avaliacao-linha">
           <span class="estrelas">
            
           </span>
         </div>
-        <p class="subtitulo">Escolha os itens do cardápio, acompanhe o preparo e combine a entrega direto com a equipe. Simples, rápido e sem complicação.</p>
+        <p class="subtitulo">Alimentação, suplementos, eletrônicos e muito mais. Escolha os produtos, acompanhe seu pedido e combine a entrega direto com a equipe. Simples, rápido e sem complicação.</p>
 
         <div class="hero-features">
           <div class="hero-feature">
             <span class="icn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></span>
-            <span><strong>Entrega rápida</strong><span>em até 30 min</span></span>
+            <span><strong>Entrega rápida</strong><span>combinada com a loja</span></span>
           </div>
           <div class="hero-feature">
-            <span class="icn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5-3 8-7 8-12a8 8 0 0 0-16 0c0 5 3 9 8 12Z"/><path d="M12 12v6"/></svg></span>
-            <span><strong>Ingredientes</strong><span>frescos e selecionados</span></span>
+            <span class="icn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4.5 8-11.8A8 8 0 0 0 4 10.2C4 17.5 12 22 12 22Z"/><path d="m9 12 2 2 4-4"/></svg></span>
+            <span><strong>Qualidade garantida</strong><span>produtos originais</span></span>
           </div>
           <div class="hero-feature">
             <span class="icn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span>
@@ -1006,25 +1026,25 @@ body:has(.conn-banner.visivel) .nav { margin-top: 38px; }
         </div>
 
         <div class="hero-acoes">
-          <button class="btn-hero-cta" id="btn-hero-ver-cardapio">Ver cardápio ↓</button>
+          <button class="btn-hero-cta" id="btn-hero-ver-cardapio">Ver produtos ↓</button>
           <span class="mini-info"><span class="ponto"></span>Pedido pronto para retirada ou entrega</span>
         </div>
       </div>
 
       <div class="hero-foto-wrap">
         <div class="hero-foto" id="hero-foto">
-          <span class="sem-foto">🍽️</span>
+          <span class="sem-foto">🛍️</span>
         </div>
         <div class="hero-logo-badge"><img src="/assets/img/logo.png" alt="CT Prime" /></div>
         <div class="hero-stats-bar">
           <div class="hero-stat">
             <span class="icn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17h13V7H3z"/><path d="M16 10h3l3 3v4h-6"/><circle cx="7.5" cy="17.5" r="1.8"/><circle cx="17.5" cy="17.5" r="1.8"/></svg></span>
-            <span><strong>Entrega em até</strong><span>30 MIN</span></span>
+            <span><strong>Entrega</strong><span>RÁPIDA</span></span>
           </div>
         
           <div class="hero-stat">
-            <span class="icn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5-3 8-7 8-12a8 8 0 0 0-16 0c0 5 3 9 8 12Z"/><path d="M12 12v6"/></svg></span>
-            <span><strong>Ingredientes</strong><span>FRESCOS</span></span>
+            <span class="icn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4.5 8-11.8A8 8 0 0 0 4 10.2C4 17.5 12 22 12 22Z"/><path d="m9 12 2 2 4-4"/></svg></span>
+            <span><strong>Produtos</strong><span>ORIGINAIS</span></span>
           </div>
         </div>
       </div>
@@ -1039,10 +1059,10 @@ body:has(.conn-banner.visivel) .nav { margin-top: 38px; }
     <div class="cardapio-cabecalho">
       <div class="campo-busca">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input id="campo-busca-input" type="text" placeholder="Buscar no cardápio..." />
+        <input id="campo-busca-input" type="text" placeholder="Buscar produtos..." />
       </div>
       <select class="select-ordenar" id="select-ordenar">
-        <option value="padrao" selected>Cardápio completo</option>
+        <option value="padrao" selected>Catálogo completo</option>
         <option value="mais_pedidos">Mais pedidos</option>
         <option value="menor_preco">Menor preço</option>
         <option value="maior_preco">Maior preço</option>
@@ -1053,17 +1073,13 @@ body:has(.conn-banner.visivel) .nav { margin-top: 38px; }
     <div class="layout-cardapio">
       <div>
         <div class="bloco-titulo">
-          <h2 id="titulo-lista-cardapio">Cardápio completo</h2>
+          <h2 id="titulo-lista-cardapio">Catálogo completo</h2>
         </div>
         <div id="cardapio-conteudo"></div>
         <div class="ver-mais-wrap" id="ver-mais-wrap">
           <button class="btn-ver-mais" id="btn-ver-mais">Ver todos</button>
         </div>
       </div>
-
-     
-        </div>
-      </aside>
     </div>
   </section>
   </main>
@@ -1072,7 +1088,7 @@ body:has(.conn-banner.visivel) .nav { margin-top: 38px; }
     <div class="rodape-inner">
       <div class="rodape-coluna rodape-marca">
         <p class="rodape-nome"><span class="rodape-logo"><img src="/assets/img/logo.png" alt="CT Prime" /></span><span id="rodape-nome-loja">CT Prime</span></p>
-        <p class="rodape-texto">Tapiocas deliciosas feitas com ingredientes selecionados e muito carinho para você.</p>
+        <p class="rodape-texto">Alimentação, suplementos, eletrônicos e muito mais — tudo em um só lugar, com qualidade selecionada e atendimento próximo.</p>
         <div class="rodape-redes">
           <a href="https://www.instagram.com/ctprime.fg?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" class="rodape-icone-btn" aria-label="Instagram" title="Instagram">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37Z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
@@ -3492,7 +3508,7 @@ const connBanner = {
 
   offline() {
     this.desconectadoDesde = this.desconectadoDesde || Date.now();
-    this.mostrar("Você está offline. Mostrando o último cardápio salvo — pedidos ficam indisponíveis até a conexão voltar.");
+    this.mostrar("Você está offline. Mostrando o último catálogo salvo — pedidos ficam indisponíveis até a conexão voltar.");
     atualizarEstadoBotaoPedidoOffline();
   },
 
@@ -3546,6 +3562,11 @@ const DEFINICOES_BADGES = {
   vegetariano: "Vegetariano",
   picante: "Picante",
   sem_gluten: "Sem glúten",
+  original: "Original",
+  importado: "Importado",
+  garantia: "Com garantia",
+  exclusivo: "Exclusivo",
+  ultimas_unidades: "Últimas unidades",
 };
 function renderBadges(produto) {
   const tags = Array.isArray(produto.tags) ? produto.tags : [];
@@ -3638,6 +3659,14 @@ const MAPA_ICONES = [
   { chave: "massa", icone: "massa" }, { chave: "macarr", icone: "massa" },
   { chave: "porção", icone: "porcao" }, { chave: "porcao", icone: "porcao" },
   { chave: "tapioca", icone: "tapioca" },
+  { chave: "suplement", icone: "suplemento" }, { chave: "whey", icone: "suplemento" }, { chave: "protein", icone: "suplemento" },
+  { chave: "creatina", icone: "suplemento" }, { chave: "vitamina", icone: "suplemento" }, { chave: "hipercal", icone: "suplemento" },
+  { chave: "fone", icone: "fone" }, { chave: "headset", icone: "fone" }, { chave: "headphone", icone: "fone" }, { chave: "audio", icone: "fone" },
+  { chave: "eletron", icone: "eletronico" }, { chave: "carregador", icone: "eletronico" }, { chave: "cabo", icone: "eletronico" },
+  { chave: "fonte", icone: "eletronico" }, { chave: "power bank", icone: "eletronico" }, { chave: "caixa de som", icone: "eletronico" },
+  { chave: "smartwatch", icone: "acessorio" }, { chave: "relógio", icone: "acessorio" }, { chave: "relogio", icone: "acessorio" },
+  { chave: "óculos", icone: "acessorio" }, { chave: "oculos", icone: "acessorio" }, { chave: "mochila", icone: "acessorio" }, { chave: "bolsa", icone: "acessorio" },
+  { chave: "roupa", icone: "moda" }, { chave: "camisa", icone: "moda" }, { chave: "camiseta", icone: "moda" }, { chave: "moda", icone: "moda" }, { chave: "tênis", icone: "moda" }, { chave: "tenis", icone: "moda" },
 ];
 
 const SVG_PATHS_ICONES = {
@@ -3654,6 +3683,11 @@ const SVG_PATHS_ICONES = {
   massa: '<path d="M4 12h16a8 4 0 0 1-16 0Z"/><path d="M8 12c1-2 3-2 4 0s3 2 4 0"/>',
   porcao: '<path d="M5 8h14l-1.5 12a2 2 0 0 1-2 1.8H8.5a2 2 0 0 1-2-1.8L5 8Z"/><path d="M5 8 4 4h16l-1 4"/><path d="M9 8v11M12 8v11M15 8v11"/>',
   tapioca: '<path d="M4 15c0 3.3 3.6 6 8 6s8-2.7 8-6"/><path d="M4 15c0-1 .8-1.6 1.8-2A19 19 0 0 1 12 12c2.2 0 4.4.4 6.2 1 1 .4 1.8 1 1.8 2"/><path d="M12 12V6l6 3.2"/>',
+  suplemento: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><path d="M6.5 11v6M17.5 11v6"/><path d="M4 20h16"/>',
+  fone: '<path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="14" width="5" height="7" rx="2"/><rect x="16.5" y="14" width="5" height="7" rx="2"/>',
+  eletronico: '<rect x="6" y="2" width="12" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/><path d="M9 6h6v6H9z"/>',
+  acessorio: '<circle cx="12" cy="12" r="7"/><path d="M12 9v3l2 2"/><path d="M9 2h6M9 22h6"/>',
+  moda: '<path d="M8 3 4 6l2 3-1 12h14l-1-12 2-3-4-3"/><path d="M8 3a4 4 0 0 0 8 0"/>',
   outros: '<path d="M7 2v8a2 2 0 0 1-2 2v10"/><path d="M5 2v6M9 2v6"/><path d="M17 2c-1.6 0-3 1.6-3 4v4c0 1 .6 2 1.6 2H17"/><path d="M17 2v20"/>',
   todas: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
 };
@@ -4058,14 +4092,60 @@ async function recarregarProdutos() {
   renderHeroDestaque();
 }
 
+let heroCarrosselTimer = null;
+let heroCarrosselIds = "";
+const HERO_CARROSSEL_INTERVALO = 4000;
+const HERO_CARROSSEL_MAX_ITENS = 8;
+
 function renderHeroDestaque() {
   const heroFoto = document.getElementById("hero-foto");
-  const comFoto = produtos.find((p) => p.imagemUrl && (Array.isArray(p.tags) && p.tags.includes("mais_pedido"))) || produtos.find((p) => p.imagemUrl);
-  if (comFoto) {
-    heroFoto.innerHTML = `<img src="${escapeHtml(comFoto.imagemUrl)}" alt="${escapeHtml(comFoto.nome)}" />`;
-  } else {
-    heroFoto.innerHTML = `<span class="sem-foto">🍽️</span>`;
+
+  // Prioriza itens marcados como "mais_pedido", depois preenche com os demais que têm foto.
+  const comFoto = produtos.filter((p) => p.imagemUrl);
+  const destaques = [
+    ...comFoto.filter((p) => Array.isArray(p.tags) && p.tags.includes("mais_pedido")),
+    ...comFoto.filter((p) => !(Array.isArray(p.tags) && p.tags.includes("mais_pedido"))),
+  ].slice(0, HERO_CARROSSEL_MAX_ITENS);
+
+  if (destaques.length === 0) {
+    if (heroCarrosselTimer) { clearInterval(heroCarrosselTimer); heroCarrosselTimer = null; }
+    heroCarrosselIds = "";
+    heroFoto.innerHTML = `<span class="sem-foto">🛍️</span>`;
+    return;
   }
+
+  // Evita reconstruir o carrossel (e reiniciar o timer) se a lista de destaques não mudou.
+  const novosIds = destaques.map((p) => p.id).join("|");
+  if (novosIds === heroCarrosselIds && heroFoto.querySelector(".hero-foto-slide")) return;
+  heroCarrosselIds = novosIds;
+
+  if (destaques.length === 1) {
+    if (heroCarrosselTimer) { clearInterval(heroCarrosselTimer); heroCarrosselTimer = null; }
+    const p = destaques[0];
+    heroFoto.innerHTML = `<img src="${escapeHtml(p.imagemUrl)}" alt="${escapeHtml(p.nome)}" />`;
+    return;
+  }
+
+  heroFoto.innerHTML =
+    destaques.map((p, i) => `
+      <div class="hero-foto-slide${i === 0 ? " ativa" : ""}" data-idx="${i}">
+        <img src="${escapeHtml(p.imagemUrl)}" alt="${escapeHtml(p.nome)}" />
+      </div>
+    `).join("") +
+    `<div class="hero-foto-dots">${destaques.map((_, i) => `<span class="ponto-slide${i === 0 ? " ativo" : ""}" data-idx="${i}"></span>`).join("")}</div>`;
+
+  if (heroCarrosselTimer) clearInterval(heroCarrosselTimer);
+  let idxAtual = 0;
+  heroCarrosselTimer = setInterval(() => {
+    const slides = heroFoto.querySelectorAll(".hero-foto-slide");
+    const dots = heroFoto.querySelectorAll(".ponto-slide");
+    if (!slides.length) return;
+    slides[idxAtual].classList.remove("ativa");
+    if (dots[idxAtual]) dots[idxAtual].classList.remove("ativo");
+    idxAtual = (idxAtual + 1) % slides.length;
+    slides[idxAtual].classList.add("ativa");
+    if (dots[idxAtual]) dots[idxAtual].classList.add("ativo");
+  }, HERO_CARROSSEL_INTERVALO);
 }
 
 function renderFiltroCategorias() {
@@ -4117,7 +4197,7 @@ function ordenarLista(lista) {
 }
 
 const TITULOS_ORDENACAO = {
-  padrao: "Cardápio completo",
+  padrao: "Catálogo completo",
   mais_pedidos: "Mais pedidos",
   menor_preco: "Menor preço",
   maior_preco: "Maior preço",
@@ -4126,7 +4206,7 @@ const TITULOS_ORDENACAO = {
 
 function atualizarTituloLista() {
   const titulo = document.getElementById("titulo-lista-cardapio");
-  if (titulo) titulo.textContent = TITULOS_ORDENACAO[ordenacaoAtiva] || "Cardápio";
+  if (titulo) titulo.textContent = TITULOS_ORDENACAO[ordenacaoAtiva] || "Catálogo";
 }
 
 function atualizarBotaoVerMais(totalOculto) {
@@ -4150,7 +4230,7 @@ function renderCardapio() {
       container.innerHTML = `
         <div class="empty-state">
           <span class="emoji-vazio">⚠️</span>
-          <strong>Não conseguimos carregar o cardápio</strong>
+          <strong>Não conseguimos carregar o catálogo</strong>
           Verifique sua conexão e tente novamente.
           <button class="btn-tentar-novamente" id="btn-tentar-novamente">Tentar novamente</button>
         </div>`;
@@ -4161,7 +4241,7 @@ function renderCardapio() {
         renderCardapio();
       });
     } else {
-      container.innerHTML = `<div class="empty-state"><span class="emoji-vazio">🍽️</span><strong>Cardápio indisponível no momento</strong>Volte mais tarde ou fale com a equipe da loja.</div>`;
+      container.innerHTML = `<div class="empty-state"><span class="emoji-vazio">🛍️</span><strong>Catálogo indisponível no momento</strong>Volte mais tarde ou fale com a equipe da loja.</div>`;
     }
     return;
   }
@@ -4299,28 +4379,24 @@ function abrirDetalheProduto(produtoId) {
   vincularEventosSugestoes(painel);
 }
 
-// ===================== SUGESTÕES COMPLEMENTARES (peça também) =====================
-
-function ehBebida(produto) {
-  const cat = (produto.categoria || "").toLowerCase();
-  return ["bebid", "suco", "refri", "água", "agua", "soda", "drink"].some((chave) => cat.includes(chave));
-}
+// ===================== SUGESTÕES COMPLEMENTARES (compre também) =====================
+// Sugere primeiro outros produtos da mesma categoria (ex.: outro fone, outro
+// suplemento, outra bebida) e completa com o restante do catálogo, pra
+// funcionar bem com qualquer tipo de produto — não só comida.
 
 function renderSugestoesBebida(produtoAtual) {
-  const atualEBebida = ehBebida(produtoAtual);
   const disponiveis = produtos.filter((p) => p.id !== produtoAtual.id && p.ativo !== false);
   if (!disponiveis.length) return "";
 
-  // Prioriza o "cruzamento": se o item aberto é bebida, sugere comida primeiro (e vice-versa).
-  // Se não sobrar nada do lado oposto, completa com o que houver, pra sempre mostrar algo.
-  const complementares = disponiveis.filter((p) => ehBebida(p) !== atualEBebida);
-  const mesmoTipo = disponiveis.filter((p) => ehBebida(p) === atualEBebida);
-  const sugestoes = [...complementares, ...mesmoTipo];
+  const categoriaAtual = produtoAtual.categoria || "Outros";
+  const mesmaCategoria = disponiveis.filter((p) => (p.categoria || "Outros") === categoriaAtual);
+  const outrasCategorias = disponiveis.filter((p) => (p.categoria || "Outros") !== categoriaAtual);
+  const sugestoes = [...mesmaCategoria, ...outrasCategorias];
   if (!sugestoes.length) return "";
 
   return `
     <div class="sugestoes-bebida">
-      <span class="sugestoes-titulo">Peça também</span>
+      <span class="sugestoes-titulo">Você também pode gostar</span>
       <div class="sugestoes-lista">
         ${sugestoes.map((s) => `
           <div class="sugestao-card">
@@ -4358,68 +4434,10 @@ function vincularEventosSugestoes(painel) {
   });
 }
 
-// ===================== SUGESTÕES INTELIGENTES DO CARRINHO (peça também) =====================
-
-function normalizarTextoBusca(txt) {
-  return (txt || "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
-
-// Classifica um produto em "tipos" com base no nome/categoria (texto livre cadastrado
-// pelo próprio estabelecimento), pra podermos cruzar sugestões sem depender de uma
-// categoria fixa e rígida no cadastro.
-function classificarProduto(produto) {
-  const texto = normalizarTextoBusca(`${produto.nome} ${produto.categoria || ""}`);
-  const tipos = new Set();
-
-  if (/\btapioca/.test(texto)) tipos.add("tapioca");
-  if (/hamburg|burger|\bx-|\bx \b|sanduich|sanduba|cachorro.quente|hot.?dog/.test(texto)) tipos.add("hamburguer");
-  if (/acai/.test(texto)) tipos.add("acai");
-  if (/batata/.test(texto)) tipos.add("batata");
-  if (/sobremesa|sorvete|pudim|brownie|milk.?shake|torta|bolo|doce/.test(texto)) tipos.add("sobremesa");
-  if (/energetic/.test(texto)) tipos.add("energetico");
-  if (/granola/.test(texto)) tipos.add("granola");
-  if (/\bagua\b/.test(texto)) tipos.add("agua");
-  if (/\bsuco/.test(texto)) tipos.add("suco");
-  if (/refri|refrigerante|\bcoca\b|\bsoda\b|guarana/.test(texto)) tipos.add("refrigerante");
-
-  const ehBebidaProduto =
-    tipos.has("agua") || tipos.has("suco") || tipos.has("refrigerante") || tipos.has("energetico") || ehBebida(produto);
-  if (ehBebidaProduto) tipos.add("bebida");
-
-  // Tudo que não é bebida nem sobremesa entra como "lanche" (comida salgada em geral),
-  // pra sempre termos algo pra sugerir quando o carrinho só tem bebidas.
-  if (!tipos.has("bebida") && !tipos.has("sobremesa")) tipos.add("lanche");
-
-  return tipos;
-}
-
-// Monta o conjunto de "tipos" que queremos sugerir, olhando pro que já está no carrinho.
-function tiposAlvoParaCarrinho(produtosNoCarrinho) {
-  const alvo = new Set();
-
-  produtosNoCarrinho.forEach((p) => {
-    const tipos = classificarProduto(p);
-    if (tipos.has("tapioca")) ["refrigerante", "suco", "agua"].forEach((t) => alvo.add(t));
-    if (tipos.has("hamburguer")) ["batata", "refrigerante", "sobremesa"].forEach((t) => alvo.add(t));
-    if (tipos.has("acai")) ["agua", "energetico", "granola"].forEach((t) => alvo.add(t));
-  });
-
-  const todosSaoBebida = produtosNoCarrinho.length > 0 && produtosNoCarrinho.every((p) => classificarProduto(p).has("bebida"));
-  if (todosSaoBebida) alvo.add("lanche");
-
-  // Fallback: se nenhuma regra específica bateu, cruza bebida <-> lanche como antes.
-  if (!alvo.size) {
-    const contemBebida = produtosNoCarrinho.some((p) => classificarProduto(p).has("bebida"));
-    const contemLanche = produtosNoCarrinho.some((p) => classificarProduto(p).has("lanche"));
-    if (contemLanche && !contemBebida) alvo.add("bebida");
-    else if (contemBebida && !contemLanche) alvo.add("lanche");
-  }
-
-  return alvo;
-}
+// ===================== SUGESTÕES INTELIGENTES DO CARRINHO (compre também) =====================
+// Prioriza produtos das mesmas categorias já presentes no carrinho (ex.: quem
+// leva um fone pode gostar de outro acessório) e destaca itens "mais pedidos",
+// funcionando bem para qualquer tipo de produto — comida, suplemento, eletrônico etc.
 
 function gerarSugestoesCarrinho() {
   const idsNoCarrinho = new Set(Object.keys(carrinho));
@@ -4430,29 +4448,18 @@ function gerarSugestoesCarrinho() {
   const candidatos = produtos.filter((p) => p.ativo !== false && !idsNoCarrinho.has(p.id));
   if (!candidatos.length) return [];
 
-  const tiposAlvo = tiposAlvoParaCarrinho(produtosNoCarrinho);
+  const categoriasNoCarrinho = new Set(produtosNoCarrinho.map((p) => p.categoria || "Outros"));
 
   const pontuados = candidatos
     .map((p) => {
-      const tipos = classificarProduto(p);
       let pontos = 0;
-      tipos.forEach((t) => { if (tiposAlvo.has(t)) pontos++; });
+      if (categoriasNoCarrinho.has(p.categoria || "Outros")) pontos += 2;
+      if (Array.isArray(p.tags) && p.tags.includes("mais_pedido")) pontos += 1;
       return { produto: p, pontos };
     })
-    .filter((x) => x.pontos > 0)
     .sort((a, b) => b.pontos - a.pontos);
 
-  let sugestoes = pontuados.map((x) => x.produto);
-
-  // Completa até 4 com outros itens disponíveis (que ainda não estão no carrinho),
-  // pra sempre mostrar alguma coisa na seção quando fizer sentido.
-  if (sugestoes.length < 4) {
-    const idsJaSugeridos = new Set(sugestoes.map((p) => p.id));
-    const resto = candidatos.filter((p) => !idsJaSugeridos.has(p.id));
-    sugestoes = sugestoes.concat(resto);
-  }
-
-  return sugestoes.slice(0, 4);
+  return pontuados.map((x) => x.produto).slice(0, 4);
 }
 
 function htmlCardSugestaoCarrinho(s) {
@@ -4479,7 +4486,7 @@ function renderSugestoesCarrinho() {
   }
   box.style.display = "";
   box.innerHTML = `
-    <span class="sugestoes-titulo">Peça também</span>
+    <span class="sugestoes-titulo">Compre também</span>
     <div class="sugestoes-lista">
       ${sugestoes.map((s) => htmlCardSugestaoCarrinho(s)).join("")}
     </div>
@@ -4810,7 +4817,7 @@ function abrirCarrinho() {
           </span>
           <strong>Sua sacola está vazia</strong>
           <p>Adicione itens</p>
-          <button class="link-ver-cardapio" id="btn-ver-cardapio">Ver cardápio</button>
+          <button class="link-ver-cardapio" id="btn-ver-cardapio">Ver produtos</button>
         </div>
       </div>
     `;
@@ -4960,7 +4967,7 @@ function mostrarConfirmacao(forma, trocoPara, total, pedidoId) {
       <div class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
       <h2>Pedido enviado!</h2>
       <div class="selo-codigo-pedido">Pedido <strong>#${escapeHtml(codigoPedido(pedidoId))}</strong></div>
-      <p>A loja já recebeu seu pedido e vai começar o preparo. Guarde esse número para acompanhar ou citar no balcão.</p>
+      <p>A loja já recebeu seu pedido e vai começar a separar tudo. Guarde esse número para acompanhar ou citar no balcão.</p>
       <div class="instrucao"><strong>Pagamento: ${FORMAS_PAGAMENTO.find((f) => f.id === forma).rotulo}</strong>${instrucoes[forma]}</div>
       ${forma === "pix" ? renderizarBoxPix(total) : ""}
       <button class="btn-ver-pedido" id="btn-ver-pedido-confirmacao" style="margin-top:18px">Acompanhar pedido</button>
