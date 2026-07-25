@@ -1,0 +1,18 @@
+# Template de configuração do Cloudflare Tunnel pro CT Prime.
+#
+# COMO USAR:
+# 1. Copie este arquivo pra: C:\Users\SEU_USUARIO\.cloudflared\config.yml
+# 2. Rode `cloudflared tunnel create ctprime` e troque o ID abaixo pelo ID gerado
+# 3. Troque "app.seudominio.com" pelo domínio/subdomínio que você registrou
+# 4. Rode `cloudflared tunnel route dns ctprime app.seudominio.com`
+#
+# Enquanto você não tem domínio (fase de teste), NÃO precisa deste arquivo —
+# use apenas: cloudflared tunnel --url http://localhost:3000
+
+tunnel: COLOQUE_AQUI_O_ID_DO_TUNEL
+credentials-file: C:\Users\SEU_USUARIO\.cloudflared\COLOQUE_AQUI_O_ID_DO_TUNEL.json
+
+ingress:
+  - hostname: app.seudominio.com
+    service: http://localhost:3000
+  - service: http_status:404
