@@ -4976,6 +4976,13 @@ function abrirCarrinho() {
       alert("Você está sem conexão no momento. Conecte-se à internet ou ao Wi-Fi da loja para enviar o pedido.");
       return;
     }
+    const campoFuncionario = document.getElementById("codigo-funcionario");
+    if (campoFuncionario?.value.trim() && !funcionarioDesconto) {
+      document.getElementById("mensagem-funcionario").textContent =
+        "Valide o código antes de confirmar ou apague-o para comprar sem desconto.";
+      campoFuncionario.focus();
+      return;
+    }
     const cliente = document.getElementById("cliente-nome").value.trim();
     if (!cliente) { document.getElementById("cliente-nome").focus(); return; }
     const telefoneInput = document.getElementById("cliente-telefone");
