@@ -778,6 +778,13 @@ const store = {
     obter: () => api("GET", "/api/configuracoes"),
     salvar: (dados) => api("PUT", "/api/configuracoes", dados),
   },
+  descontos: {
+    percentual: (percentual) => api("PUT", "/api/descontos/percentual", { percentual }),
+    funcionarios: () => api("GET", "/api/descontos/funcionarios"),
+    adicionar: (nome) => api("POST", "/api/descontos/funcionarios", { nome }),
+    ativo: (id, ativo) => api("PATCH", `/api/descontos/funcionarios/${id}`, { ativo }),
+    renovar: (id) => api("POST", `/api/descontos/funcionarios/${id}/renovar`),
+  },
   fechamentos: {
     obterAberto: () => api("GET", "/api/fechamentos/aberto"),
     listar: () => api("GET", "/api/fechamentos"),
@@ -1357,6 +1364,9 @@ function imprimirComanda(pedido) {
       <table>${itensHtml}</table>
       <hr />
       <div class="linha"><span>Pagamento</span><span>${escapeHtml(linhaPagamento)}</span></div>
+      ${pedido.desconto > 0 ? `<div class="linha"><span>Funcionário</span><strong>${escapeHtml(pedido.funcionarioDesconto || "—")}</strong></div>
+      <div class="linha"><span>Subtotal</span><span>${formatBRL(pedido.subtotal)}</span></div>
+      <div class="linha"><span>Desconto (${pedido.descontoPercentual}%)</span><span>-${formatBRL(pedido.desconto)}</span></div>` : ""}
       <div class="total">Total: ${formatBRL(pedido.total)}</div>
       <p class="rodape">CT Prime — impresso em ${new Date().toLocaleString("pt-BR")}</p>
     </body>
@@ -1996,7 +2006,9 @@ function calcularResumoVendas(todosPedidos, produtos, periodo, category) {
   pedidos.forEach((p) => {
     (p.itens || []).forEach((item) => {
       const cat = obterCategoriaItem(item, produtos);
-      const valorItem = item.precoUnit * item.quantidade;
+      // Rateia o desconto do pedido nos produtos para que relatórios reflitam a receita líquida.
+      const fatorDesconto = p.subtotal > 0 ? p.total / p.subtotal : 1;
+      const valorItem = item.precoUnit * item.quantidade * fatorDesconto;
 
       if (!porCategoria[cat]) porCategoria[cat] = { quantidade: 0, receita: 0 };
       porCategoria[cat].quantidade += item.quantidade;
@@ -2276,6 +2288,23 @@ async function renderConfiguracoes(container) {
       <div class="form-field" style="margin-bottom:16px"><label for="c-email">E-mail</label><input id="c-email" type="email" maxlength="120" value="${escapeHtml(dados.email)}" /></div>
       <button type="submit" class="btn-primary">Salvar alterações</button>
     </form>
+    <section class="form-panel" style="margin-top:20px;max-width:680px">
+      <h4>Desconto de funcionários — cafeteria</h4>
+      <p class="page-subtitle" style="margin-bottom:14px">Apenas funcionários com código individual ativo recebem o benefício. O servidor calcula o desconto automaticamente.</p>
+      <div class="form-row" style="align-items:end">
+        <div class="form-field"><label for="c-desconto">Desconto (%) — 0 desativa</label>
+          <input id="c-desconto" type="number" min="0" max="90" step="1" value="${Number(dados.descontoPercentual) || 0}" />
+        </div>
+        <div><button class="btn-primary" type="button" id="btn-salvar-desconto">Salvar percentual</button></div>
+      </div>
+      <h4 style="margin-top:24px">Códigos dos funcionários</h4>
+      <div class="form-row" style="align-items:end">
+        <div class="form-field"><label for="c-funcionario">Nome do funcionário</label><input id="c-funcionario" maxlength="80" placeholder="Nome completo" /></div>
+        <div><button type="button" class="btn-primary" id="btn-criar-funcionario">Cadastrar e gerar código</button></div>
+      </div>
+      <p class="page-subtitle">O código é mostrado apenas na criação ou renovação. Entregue-o diretamente ao funcionário.</p>
+      <div id="funcionarios-desconto-lista" style="margin-top:16px"></div>
+    </section>
   `;
   const campoNome = document.getElementById("c-nome");
   const campoEmail = document.getElementById("c-email");
@@ -2301,6 +2330,67 @@ async function renderConfiguracoes(container) {
       mostrarToast("Configurações salvas.");
     } catch (erro) { mostrarToast(erro.message); }
   });
+
+  document.getElementById("btn-salvar-desconto").addEventListener("click", async () => {
+    const campo = document.getElementById("c-desconto");
+    const percentual = Number(campo.value);
+    if (!Number.isInteger(percentual) || percentual < 0 || percentual > 90) {
+      mostrarToast("Informe um percentual inteiro de 0 a 90."); return;
+    }
+    try {
+      await store.descontos.percentual(percentual);
+      mostrarToast("Percentual atualizado para todos os pedidos futuros.");
+    } catch (erro) { mostrarToast(erro.message); }
+  });
+
+  async function carregarFuncionariosDesconto() {
+    const wrap = document.getElementById("funcionarios-desconto-lista");
+    if (!wrap) return;
+    try {
+      const funcionarios = await store.descontos.funcionarios();
+      wrap.innerHTML = funcionarios.length ? `
+        <div class="table-wrap"><table>
+          <thead><tr><th>Funcionário</th><th>Situação</th><th>Ações</th></tr></thead>
+          <tbody>${funcionarios.map((f) => `<tr>
+            <td>${escapeHtml(f.nome)}</td>
+            <td>${f.ativo ? "Ativo" : "Desativado"}</td>
+            <td>
+              <button class="btn-secondary" type="button" data-mudar-funcionario="${f.id}">${f.ativo ? "Desativar" : "Ativar"}</button>
+              <button class="btn-secondary" type="button" data-renovar-funcionario="${f.id}">Novo código</button>
+            </td>
+          </tr>`).join("")}</tbody></table></div>` : '<p class="page-subtitle">Nenhum funcionário cadastrado.</p>';
+      wrap.querySelectorAll("[data-mudar-funcionario]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const f = funcionarios.find((x) => x.id === btn.dataset.mudarFuncionario);
+          if (!f) return;
+          try { await store.descontos.ativo(f.id, !f.ativo); await carregarFuncionariosDesconto(); }
+          catch (erro) { mostrarToast(erro.message); }
+        });
+      });
+      wrap.querySelectorAll("[data-renovar-funcionario]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const f = funcionarios.find((x) => x.id === btn.dataset.renovarFuncionario);
+          if (!f || !confirm("Gerar outro código para " + f.nome + "? O anterior deixará de funcionar.")) return;
+          try {
+            const resultado = await store.descontos.renovar(f.id);
+            alert("NOVO CÓDIGO DE " + resultado.nome + ":\\n\\n" + resultado.codigo + "\\n\\nCopie agora. Ele não será mostrado novamente.");
+          } catch (erro) { mostrarToast(erro.message); }
+        });
+      });
+    } catch (erro) { wrap.textContent = erro.message || "Falha ao carregar funcionários."; }
+  }
+  document.getElementById("btn-criar-funcionario").addEventListener("click", async () => {
+    const campo = document.getElementById("c-funcionario");
+    const nome = campo.value.trim();
+    if (nome.length < 2) { mostrarToast("Informe o nome do funcionário."); return; }
+    try {
+      const resultado = await store.descontos.adicionar(nome);
+      campo.value = "";
+      alert("CÓDIGO DE " + resultado.nome + ":\\n\\n" + resultado.codigo + "\\n\\nCopie agora. Ele não será mostrado novamente.");
+      await carregarFuncionariosDesconto();
+    } catch (erro) { mostrarToast(erro.message); }
+  });
+  await carregarFuncionariosDesconto();
 }
 
 // ============================================================
