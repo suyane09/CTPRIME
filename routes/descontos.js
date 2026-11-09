@@ -1,6 +1,6 @@
 const express = require("express");
 const rateLimit = require("express-rate-limit");
-const { randomBytes, createHash } = require("crypto");
+const { randomInt, createHash } = require("crypto");
 const db = require("../db");
 const { autenticar, permitirPapeis } = require("../middleware/auth");
 const { buscarFuncionarioPorCodigo, obterPercentualDesconto } = require("../services/descontos");
@@ -8,7 +8,8 @@ const { buscarFuncionarioPorCodigo, obterPercentualDesconto } = require("../serv
 const router = express.Router();
 const admin = [autenticar, permitirPapeis("admin")];
 const limitarValidacao = rateLimit({
-  windowMs: 15 * 60 * 1000, max: 80, standardHeaders: true, legacyHeaders: false,
+  windowMs: 15 * 60 * 1000, max: 10, skipSuccessfulRequests: true,
+  standardHeaders: true, legacyHeaders: false,
   message: { erro: "Muitas tentativas. Tente novamente mais tarde." },
 });
 
@@ -37,10 +38,11 @@ router.get("/codigo-geral", ...admin, (req, res) => {
   res.json({ configurado: !!atual?.descontoCodigoGeralHash });
 });
 
-// Emite um unico codigo aleatorio de 16 caracteres hexadecimais (64 bits).
+// Emite um codigo unico aleatorio de exatamente 5 algarismos.
+// Tentativas incorretas sao limitadas pela rota publica /validar.
 // Novo codigo invalida imediatamente o anterior. O codigo so aparece nesta resposta.
 router.post("/codigo-geral/gerar", ...admin, (req, res) => {
-  const codigo = randomBytes(8).toString("hex").toUpperCase();
+  const codigo = String(randomInt(0, 100000)).padStart(5, "0");
   const hash = createHash("sha256").update(codigo).digest("hex");
   db.prepare("UPDATE configuracoes SET descontoCodigoGeralHash = ? WHERE id = 1").run(hash);
   res.json({ codigo, configurado: true });

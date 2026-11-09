@@ -4884,8 +4884,8 @@ function abrirCarrinho() {
 
       <h3>Desconto da equipe</h3>
       <div class="form-field">
-        <label for="codigo-funcionario">Código único da equipe (opcional)</label>
-        <input id="codigo-funcionario" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="32" placeholder="Digite o código fornecido pela academia" />
+        <label for="codigo-funcionario">Código da equipe (5 números, opcional)</label>
+        <input id="codigo-funcionario" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" maxlength="16" placeholder="Ex.: 01234" />
         <button type="button" class="btn-fechar" id="btn-validar-funcionario" style="margin-top:8px">Validar desconto</button>
         <p id="mensagem-funcionario" role="status" aria-live="polite" style="font-size:13px;margin-top:8px"></p>
       </div>
