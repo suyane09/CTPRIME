@@ -1,4 +1,4 @@
-const { createHash } = require("crypto");
+const { createHash, timingSafeEqual } = require("crypto");
 const db = require("../db");
 
 function normalizarCodigo(codigo) {
@@ -8,8 +8,12 @@ function normalizarCodigo(codigo) {
 function buscarFuncionarioPorCodigo(codigo) {
   const codigoNormalizado = normalizarCodigo(codigo);
   if (!/^[A-F0-9]{16}$/.test(codigoNormalizado)) return null;
-  const hash = createHash("sha256").update(codigoNormalizado).digest("hex");
-  return db.prepare("SELECT id, nome FROM funcionarios_desconto WHERE codigo_hash = ? AND ativo = 1").get(hash) || null;
+  const config = db.prepare("SELECT descontoCodigoGeralHash FROM configuracoes WHERE id = 1").get();
+  if (!config?.descontoCodigoGeralHash || !/^[a-f0-9]{64}$/i.test(config.descontoCodigoGeralHash)) return null;
+  const esperado = Buffer.from(config.descontoCodigoGeralHash, "hex");
+  const recebido = createHash("sha256").update(codigoNormalizado).digest();
+  if (!timingSafeEqual(esperado, recebido)) return null;
+  return { id: "equipe", nome: "Equipe CT Prime" };
 }
 
 function obterPercentualDesconto() {
