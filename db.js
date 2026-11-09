@@ -105,6 +105,27 @@ db.exec(`
     ON fechamentos_caixa (status) WHERE status = 'aberto';
 `);
 
+// Desconto de colaboradores: migrações não destrutivas, inclusive em bancos já em uso.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS funcionarios_desconto (
+    id TEXT PRIMARY KEY,
+    nome TEXT NOT NULL,
+    codigo_hash TEXT NOT NULL UNIQUE,
+    ativo INTEGER NOT NULL DEFAULT 1,
+    criadoEm TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+`);
+const colunasConfig = db.prepare("PRAGMA table_info(configuracoes)").all().map((c) => c.name);
+if (!colunasConfig.includes("descontoPercentual")) {
+  db.exec("ALTER TABLE configuracoes ADD COLUMN descontoPercentual INTEGER NOT NULL DEFAULT 0");
+}
+const colunasPedidosDesconto = db.prepare("PRAGMA table_info(pedidos)").all().map((c) => c.name);
+for (const [coluna, tipo] of [
+  ["subtotal", "REAL"], ["desconto", "REAL"], ["descontoPercentual", "INTEGER"], ["funcionarioDesconto", "TEXT"]
+]) {
+  if (!colunasPedidosDesconto.includes(coluna)) db.exec(`ALTER TABLE pedidos ADD COLUMN ${coluna} ${tipo}`);
+}
+
 // Migração — bancos criados antes do papel "atendente" existir têm a coluna
 // "papel" travada por um CHECK que só aceita admin/gerente/cozinha. SQLite não
 // permite alterar um CHECK existente com ALTER TABLE, então recriamos a tabela

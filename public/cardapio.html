@@ -4582,6 +4582,26 @@ function totalCarrinho() {
   return itensDoCarrinho().reduce((s, i) => s + i.precoUnit * i.quantidade, 0);
 }
 
+// Visualização do desconto; o servidor recalcula e valida o total final.
+function resumoValoresCarrinho() {
+  const subtotalCentavos = Math.round(totalCarrinho() * 100);
+  const percentual = funcionarioDesconto ? funcionarioDesconto.percentual : 0;
+  const descontoCentavos = Math.round(subtotalCentavos * percentual / 100);
+  return {
+    subtotal: subtotalCentavos / 100,
+    desconto: descontoCentavos / 100,
+    total: (subtotalCentavos - descontoCentavos) / 100,
+  };
+}
+
+function atualizarPagamentoPixCarrinho() {
+  if (formaPagamentoSelecionada !== "pix") return;
+  const box = document.getElementById("campo-troco");
+  if (!box) return;
+  box.innerHTML = renderizarBoxPix(resumoValoresCarrinho().total);
+  ligarBotaoCopiarPix();
+}
+
 function atualizarBarraCarrinho() {
   const itens = itensDoCarrinho();
   const totalItens = itens.reduce((s, i) => s + i.quantidade, 0);
@@ -4700,6 +4720,7 @@ const FORMAS_PAGAMENTO = [
 ];
 
 let formaPagamentoSelecionada = null;
+let funcionarioDesconto = null;
 
 function renderItensCarrinho() {
   const itens = itensDoCarrinho();
@@ -4740,7 +4761,11 @@ function renderItensCarrinho() {
       </div>
     </div>
   `).join("");
-  totalEl.innerHTML = `<span>Total</span><span>${formatBRL(totalCarrinho())}</span>`;
+  const valores = resumoValoresCarrinho();
+  totalEl.innerHTML = funcionarioDesconto
+    ? `<span><small>Subtotal ${formatBRL(valores.subtotal)}<br>Desconto funcionário (${funcionarioDesconto.percentual}%): -${formatBRL(valores.desconto)}</small><br><strong>Total</strong></span><strong>${formatBRL(valores.total)}</strong>`
+    : `<span>Total</span><span>${formatBRL(valores.total)}</span>`;
+  atualizarPagamentoPixCarrinho();
   const contagemEl = document.querySelector("#painel-carrinho .painel-carrinho-contagem");
   if (contagemEl) {
     const totalItens = itens.reduce((s, i) => s + i.quantidade, 0);
@@ -4791,6 +4816,7 @@ function ligarEventosItensCarrinho() {
 function abrirCarrinho() {
   const itens = itensDoCarrinho();
   formaPagamentoSelecionada = null;
+  funcionarioDesconto = null; // exige nova validação para cada pedido
   const painel = document.getElementById("painel-carrinho");
   if (!itens.length) {
     painel.innerHTML = `
@@ -4856,6 +4882,14 @@ function abrirCarrinho() {
       <div class="form-field"><label for="cliente-nome">Seu nome</label><input id="cliente-nome" placeholder="Como podemos te chamar?" value="${escapeHtml(obterPerfilCliente()?.nome || "")}" /></div>
       <div class="form-field"><label for="cliente-telefone">Seu telefone (com DDD)</label><input id="cliente-telefone" type="tel" inputmode="numeric" placeholder="(11) 99999-9999" value="${escapeHtml(obterPerfilCliente()?.telefone || "")}" /></div>
 
+      <h3>Desconto para funcionários</h3>
+      <div class="form-field">
+        <label for="codigo-funcionario">Código individual (opcional)</label>
+        <input id="codigo-funcionario" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="32" placeholder="Informe seu código de funcionário" />
+        <button type="button" class="btn-fechar" id="btn-validar-funcionario" style="margin-top:8px">Validar desconto</button>
+        <p id="mensagem-funcionario" role="status" aria-live="polite" style="font-size:13px;margin-top:8px"></p>
+      </div>
+
       <h3>Forma de pagamento</h3>
       <div class="opcoes-pagamento" id="opcoes-pagamento">
         ${FORMAS_PAGAMENTO.map((f) => `
@@ -4889,7 +4923,7 @@ function abrirCarrinho() {
       if (formaPagamentoSelecionada === "dinheiro") {
         campoTroco.innerHTML = `<div class="form-field"><label for="troco-para">Precisa de troco para quanto? (opcional)</label><input id="troco-para" type="number" min="0" step="0.01" placeholder="Ex: 50,00" /></div>`;
       } else if (formaPagamentoSelecionada === "pix") {
-        campoTroco.innerHTML = renderizarBoxPix(totalCarrinho());
+        campoTroco.innerHTML = renderizarBoxPix(resumoValoresCarrinho().total);
         ligarBotaoCopiarPix();
       } else {
         campoTroco.innerHTML = "";
@@ -4897,10 +4931,56 @@ function abrirCarrinho() {
     });
   });
 
+  const campoCodigo = document.getElementById("codigo-funcionario");
+  const mensagemFuncionario = document.getElementById("mensagem-funcionario");
+  const botaoValidar = document.getElementById("btn-validar-funcionario");
+  campoCodigo.addEventListener("input", () => {
+    funcionarioDesconto = null;
+    mensagemFuncionario.textContent = "";
+    renderItensCarrinho();
+  });
+  botaoValidar.addEventListener("click", async () => {
+    const codigo = campoCodigo.value.trim().replace(/[\\s-]/g, "").toUpperCase();
+    if (!codigo) {
+      mensagemFuncionario.textContent = "Informe o código para validar o desconto.";
+      return;
+    }
+    botaoValidar.disabled = true;
+    botaoValidar.textContent = "Validando...";
+    try {
+      const resposta = await fetch("/api/descontos/validar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ codigo }),
+      });
+      const dados = await resposta.json().catch(() => null);
+      if (!resposta.ok) throw new Error(dados?.erro || "Não foi possível validar o código.");
+      // Desconsidera uma resposta antiga se o campo mudou durante a consulta.
+      if (campoCodigo.value.trim().replace(/[\\s-]/g, "").toUpperCase() !== codigo) return;
+      funcionarioDesconto = { codigo, nome: dados.nome, percentual: dados.percentual };
+      mensagemFuncionario.textContent = `Desconto de ${dados.percentual}% aplicado para ${dados.nome}.`;
+      renderItensCarrinho();
+    } catch (erro) {
+      funcionarioDesconto = null;
+      mensagemFuncionario.textContent = erro.message || "Não foi possível aplicar o desconto.";
+      renderItensCarrinho();
+    } finally {
+      botaoValidar.disabled = false;
+      botaoValidar.textContent = "Validar desconto";
+    }
+  });
+
   document.getElementById("btn-fechar-carrinho").addEventListener("click", fecharCarrinho);
   document.getElementById("btn-confirmar-pedido").addEventListener("click", async () => {
     if (!navigator.onLine) {
       alert("Você está sem conexão no momento. Conecte-se à internet ou ao Wi-Fi da loja para enviar o pedido.");
+      return;
+    }
+    const campoFuncionario = document.getElementById("codigo-funcionario");
+    if (campoFuncionario?.value.trim() && !funcionarioDesconto) {
+      document.getElementById("mensagem-funcionario").textContent =
+        "Valide o código antes de confirmar ou apague-o para comprar sem desconto.";
+      campoFuncionario.focus();
       return;
     }
     const cliente = document.getElementById("cliente-nome").value.trim();
@@ -4927,6 +5007,7 @@ function abrirCarrinho() {
           telefone,
           itens: itensDoCarrinho(),
           total: totalCarrinho(),
+          codigoFuncionario: funcionarioDesconto?.codigo || null,
           formaPagamento: formaPagamentoSelecionada,
           trocoPara,
         }),
@@ -4945,7 +5026,7 @@ function abrirCarrinho() {
       // Usa o total retornado pelo servidor (recalculado a partir dos preços reais),
       // não o valor calculado no cliente — evita mostrar um total desatualizado
       // caso o preço de algum item tenha mudado entre montar o carrinho e confirmar.
-      mostrarConfirmacao(formaPagamentoSelecionada, trocoPara, dados.total, dados.id);
+      mostrarConfirmacao(formaPagamentoSelecionada, trocoPara, dados.total, dados.id, dados);
     } catch (erro) {
       alert(erro.message || "Não foi possível enviar o pedido. Tente novamente.");
       botaoConfirmar.disabled = false;
@@ -4955,7 +5036,7 @@ function abrirCarrinho() {
   });
 }
 
-function mostrarConfirmacao(forma, trocoPara, total, pedidoId) {
+function mostrarConfirmacao(forma, trocoPara, total, pedidoId, pedido) {
   const instrucoes = {
     pix: "Finalize o pagamento abaixo. Assim que o Pix cair, a loja já vai identificar seu pedido.",
     cartao: "Tenha seu cartão de crédito ou débito em mãos na entrega.",
@@ -4968,6 +5049,7 @@ function mostrarConfirmacao(forma, trocoPara, total, pedidoId) {
       <h2>Pedido enviado!</h2>
       <div class="selo-codigo-pedido">Pedido <strong>#${escapeHtml(codigoPedido(pedidoId))}</strong></div>
       <p>A loja já recebeu seu pedido e vai começar a separar tudo. Guarde esse número para acompanhar ou citar no balcão.</p>
+      ${pedido?.desconto > 0 ? `<p>Desconto funcionário (${pedido.descontoPercentual}%): -${formatBRL(pedido.desconto)}. Total: ${formatBRL(total)}.</p>` : ""}
       <div class="instrucao"><strong>Pagamento: ${FORMAS_PAGAMENTO.find((f) => f.id === forma).rotulo}</strong>${instrucoes[forma]}</div>
       ${forma === "pix" ? renderizarBoxPix(total) : ""}
       <button class="btn-ver-pedido" id="btn-ver-pedido-confirmacao" style="margin-top:18px">Acompanhar pedido</button>
