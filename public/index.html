@@ -780,10 +780,9 @@ const store = {
   },
   descontos: {
     percentual: (percentual) => api("PUT", "/api/descontos/percentual", { percentual }),
-    funcionarios: () => api("GET", "/api/descontos/funcionarios"),
-    adicionar: (nome) => api("POST", "/api/descontos/funcionarios", { nome }),
-    ativo: (id, ativo) => api("PATCH", `/api/descontos/funcionarios/${id}`, { ativo }),
-    renovar: (id) => api("POST", `/api/descontos/funcionarios/${id}/renovar`),
+    codigoGeral: () => api("GET", "/api/descontos/codigo-geral"),
+    gerarCodigoGeral: () => api("POST", "/api/descontos/codigo-geral/gerar", {}),
+    desativarCodigoGeral: () => api("DELETE", "/api/descontos/codigo-geral"),
   },
   fechamentos: {
     obterAberto: () => api("GET", "/api/fechamentos/aberto"),
@@ -2297,13 +2296,19 @@ async function renderConfiguracoes(container) {
         </div>
         <div><button class="btn-primary" type="button" id="btn-salvar-desconto">Salvar percentual</button></div>
       </div>
-      <h4 style="margin-top:24px">Códigos dos funcionários</h4>
+      <h4 style="margin-top:24px">Código único para toda a equipe</h4>
+      <p class="page-subtitle" style="margin:8px 0 12px">Um único código será utilizado por todos os funcionários. Qualquer pessoa que tiver acesso ao código poderá aplicar o desconto.</p>
+      <p class="page-subtitle" id="codigo-equipe-status" aria-live="polite">Verificando código...</p>
       <div class="form-row" style="align-items:end">
-        <div class="form-field"><label for="c-funcionario">Nome do funcionário</label><input id="c-funcionario" maxlength="80" placeholder="Nome completo" /></div>
-        <div><button type="button" class="btn-primary" id="btn-criar-funcionario">Cadastrar e gerar código</button></div>
+        <div class="form-field" style="flex:1;min-width:200px">
+          <label for="c-codigo-equipe">Código da equipe</label>
+          <input id="c-codigo-equipe" readonly autocomplete="off" placeholder="O código aparece ao gerar um novo" />
+        </div>
+        <div><button class="btn-primary" type="button" id="btn-gerar-codigo-equipe">Gerar código único</button></div>
+        <div><button class="btn-secondary" type="button" id="btn-copiar-codigo-equipe" disabled>Copiar código</button></div>
       </div>
-      <p class="page-subtitle">O código é mostrado apenas na criação ou renovação. Entregue-o diretamente ao funcionário.</p>
-      <div id="funcionarios-desconto-lista" style="margin-top:16px"></div>
+      <button class="btn-danger-outline" type="button" id="btn-desativar-codigo-equipe" style="margin-top:8px" disabled>Revogar código atual</button>
+      <p class="page-subtitle" style="margin-top:10px">Copie e guarde o código quando gerar. Ele não poderá ser consultado depois; gerar outro código invalida o anterior.</p>
     </section>
   `;
   const campoNome = document.getElementById("c-nome");
@@ -2343,54 +2348,68 @@ async function renderConfiguracoes(container) {
     } catch (erro) { mostrarToast(erro.message); }
   });
 
-  async function carregarFuncionariosDesconto() {
-    const wrap = document.getElementById("funcionarios-desconto-lista");
-    if (!wrap) return;
+  const campoCodigoEquipe = document.getElementById("c-codigo-equipe");
+  const btnGerarCodigo = document.getElementById("btn-gerar-codigo-equipe");
+  const btnCopiarCodigo = document.getElementById("btn-copiar-codigo-equipe");
+  const btnRevogarCodigo = document.getElementById("btn-desativar-codigo-equipe");
+  const statusCodigo = document.getElementById("codigo-equipe-status");
+
+  async function carregarSituacaoCodigo() {
     try {
-      const funcionarios = await store.descontos.funcionarios();
-      wrap.innerHTML = funcionarios.length ? `
-        <div class="table-wrap"><table>
-          <thead><tr><th>Funcionário</th><th>Situação</th><th>Ações</th></tr></thead>
-          <tbody>${funcionarios.map((f) => `<tr>
-            <td>${escapeHtml(f.nome)}</td>
-            <td>${f.ativo ? "Ativo" : "Desativado"}</td>
-            <td>
-              <button class="btn-secondary" type="button" data-mudar-funcionario="${f.id}">${f.ativo ? "Desativar" : "Ativar"}</button>
-              <button class="btn-secondary" type="button" data-renovar-funcionario="${f.id}">Novo código</button>
-            </td>
-          </tr>`).join("")}</tbody></table></div>` : '<p class="page-subtitle">Nenhum funcionário cadastrado.</p>';
-      wrap.querySelectorAll("[data-mudar-funcionario]").forEach((btn) => {
-        btn.addEventListener("click", async () => {
-          const f = funcionarios.find((x) => x.id === btn.dataset.mudarFuncionario);
-          if (!f) return;
-          try { await store.descontos.ativo(f.id, !f.ativo); await carregarFuncionariosDesconto(); }
-          catch (erro) { mostrarToast(erro.message); }
-        });
-      });
-      wrap.querySelectorAll("[data-renovar-funcionario]").forEach((btn) => {
-        btn.addEventListener("click", async () => {
-          const f = funcionarios.find((x) => x.id === btn.dataset.renovarFuncionario);
-          if (!f || !confirm("Gerar outro código para " + f.nome + "? O anterior deixará de funcionar.")) return;
-          try {
-            const resultado = await store.descontos.renovar(f.id);
-            alert("NOVO CÓDIGO DE " + resultado.nome + ":\n\n" + resultado.codigo + "\n\nCopie agora. Ele não será mostrado novamente.");
-          } catch (erro) { mostrarToast(erro.message); }
-        });
-      });
-    } catch (erro) { wrap.textContent = erro.message || "Falha ao carregar funcionários."; }
+      const info = await store.descontos.codigoGeral();
+      btnRevogarCodigo.disabled = !info.configurado;
+      btnGerarCodigo.textContent = info.configurado ? "Trocar código da equipe" : "Gerar código único";
+      statusCodigo.textContent = info.configurado
+        ? "Código da equipe ativo. O valor fica oculto por segurança."
+        : "Nenhum código ativo. Gere um código para liberar o benefício.";
+    } catch (erro) { statusCodigo.textContent = erro.message || "Não foi possível consultar o código."; }
   }
-  document.getElementById("btn-criar-funcionario").addEventListener("click", async () => {
-    const campo = document.getElementById("c-funcionario");
-    const nome = campo.value.trim();
-    if (nome.length < 2) { mostrarToast("Informe o nome do funcionário."); return; }
+
+  btnGerarCodigo.addEventListener("click", async () => {
+    if (!btnRevogarCodigo.disabled && !confirm("Gerar um novo código vai invalidar o anterior para TODOS os funcionários. Continuar?")) return;
+    btnGerarCodigo.disabled = true;
     try {
-      const resultado = await store.descontos.adicionar(nome);
-      campo.value = "";
-      alert("CÓDIGO DE " + resultado.nome + ":\n\n" + resultado.codigo + "\n\nCopie agora. Ele não será mostrado novamente.");
-      await carregarFuncionariosDesconto();
+      const resultado = await store.descontos.gerarCodigoGeral();
+      campoCodigoEquipe.value = resultado.codigo;
+      btnCopiarCodigo.disabled = false;
+      campoCodigoEquipe.select();
+      await carregarSituacaoCodigo();
+      statusCodigo.textContent = "Novo código gerado! Copie e envie para a equipe. O anterior não funciona mais.";
+      mostrarToast("Código único da equipe gerado.");
     } catch (erro) { mostrarToast(erro.message); }
+    finally { btnGerarCodigo.disabled = false; }
   });
-  await carregarFuncionariosDesconto();
+
+  btnCopiarCodigo.addEventListener("click", async () => {
+    const codigo = campoCodigoEquipe.value;
+    if (!codigo) return;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(codigo);
+      } else {
+        campoCodigoEquipe.focus();
+        campoCodigoEquipe.select();
+        if (!document.execCommand("copy")) throw new Error("Cópia indisponível");
+      }
+      mostrarToast("Código copiado. Compartilhe apenas com funcionários.");
+    } catch (_) {
+      campoCodigoEquipe.select();
+      mostrarToast("Copie o código selecionado com Ctrl+C.");
+    }
+  });
+
+  btnRevogarCodigo.addEventListener("click", async () => {
+    if (!confirm("Revogar o código? Ninguém poderá aplicar o desconto até gerar outro.")) return;
+    btnRevogarCodigo.disabled = true;
+    try {
+      await store.descontos.desativarCodigoGeral();
+      campoCodigoEquipe.value = "";
+      btnCopiarCodigo.disabled = true;
+      await carregarSituacaoCodigo();
+      mostrarToast("Código da equipe revogado.");
+    } catch (erro) { mostrarToast(erro.message); await carregarSituacaoCodigo(); }
+  });
+  await carregarSituacaoCodigo();
 }
 
 // ============================================================
