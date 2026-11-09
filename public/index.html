@@ -2296,13 +2296,13 @@ async function renderConfiguracoes(container) {
         </div>
         <div><button class="btn-primary" type="button" id="btn-salvar-desconto">Salvar percentual</button></div>
       </div>
-      <h4 style="margin-top:24px">Código único para toda a equipe</h4>
-      <p class="page-subtitle" style="margin:8px 0 12px">Um único código será utilizado por todos os funcionários. Qualquer pessoa que tiver acesso ao código poderá aplicar o desconto.</p>
+      <h4 style="margin-top:24px">Código único de 5 números para a equipe</h4>
+      <p class="page-subtitle" style="margin:8px 0 12px">Um único código de 5 números será utilizado por todos os funcionários. Qualquer pessoa que tiver acesso poderá aplicar o desconto.</p>
       <p class="page-subtitle" id="codigo-equipe-status" aria-live="polite">Verificando código...</p>
       <div class="form-row" style="align-items:end">
         <div class="form-field" style="flex:1;min-width:200px">
-          <label for="c-codigo-equipe">Código da equipe</label>
-          <input id="c-codigo-equipe" readonly autocomplete="off" placeholder="O código aparece ao gerar um novo" />
+          <label for="c-codigo-equipe">Código da equipe (5 números)</label>
+          <input id="c-codigo-equipe" readonly autocomplete="off" placeholder="Gerar um código de 5 números" />
         </div>
         <div><button class="btn-primary" type="button" id="btn-gerar-codigo-equipe">Gerar código único</button></div>
         <div><button class="btn-secondary" type="button" id="btn-copiar-codigo-equipe" disabled>Copiar código</button></div>
