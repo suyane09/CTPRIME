@@ -7,7 +7,8 @@ function normalizarCodigo(codigo) {
 
 function buscarFuncionarioPorCodigo(codigo) {
   const codigoNormalizado = normalizarCodigo(codigo);
-  if (!/^[A-F0-9]{16}$/.test(codigoNormalizado)) return null;
+  // Codigo atual: 5 digitos numericos. Formato anterior aceito ate ser substituido.
+  if (!/^(?:\d{5}|[A-F0-9]{16})$/.test(codigoNormalizado)) return null;
   const config = db.prepare("SELECT descontoCodigoGeralHash FROM configuracoes WHERE id = 1").get();
   if (!config?.descontoCodigoGeralHash || !/^[a-f0-9]{64}$/i.test(config.descontoCodigoGeralHash)) return null;
   const esperado = Buffer.from(config.descontoCodigoGeralHash, "hex");
