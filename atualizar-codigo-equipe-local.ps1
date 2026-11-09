@@ -7,7 +7,7 @@ param()
 $ErrorActionPreference = "Stop"
 $root = "C:\CTPRIME"
 $repo = "suyane09/CTPRIME"
-$branch = "feature/codigo-unico-cafeteria"
+$branch = "main"
 $arquivosAntigos = @("db.js", "routes/descontos.js", "services/descontos.js", "routes/configuracoes.js", "public/index.html", "public/cardapio.html", "public/sw.js")
 $arquivosNovos = @()
 $arquivos = @($arquivosAntigos) + @($arquivosNovos)
