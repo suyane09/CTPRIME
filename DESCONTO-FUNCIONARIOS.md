@@ -22,7 +22,7 @@ O PC já usa `C:\CTPRIME`, `pm2.exe` como serviço automático e porta 3000.
 1. No CMD elevado (Executar como administrador), baixar o instalador:
 
    ```cmd
-   curl.exe -fL "https://raw.githubusercontent.com/suyane09/CTPRIME/feature/desconto-funcionarios-cafeteria/instalar-desconto-local.ps1" -o "%TEMP%\ctprime-instalar-desconto.ps1"
+   curl.exe -fL "https://raw.githubusercontent.com/suyane09/CTPRIME/main/instalar-desconto-local.ps1" -o "%TEMP%\ctprime-instalar-desconto.ps1"
    ```
 
 2. Conferir o script opcionalmente com `notepad "%TEMP%\ctprime-instalar-desconto.ps1"`.
