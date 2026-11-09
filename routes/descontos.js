@@ -8,7 +8,7 @@ const { buscarFuncionarioPorCodigo, obterPercentualDesconto } = require("../serv
 const router = express.Router();
 const admin = [autenticar, permitirPapeis("admin")];
 const limitarValidacao = rateLimit({
-  windowMs: 15 * 60 * 1000, max: 30, standardHeaders: true, legacyHeaders: false,
+  windowMs: 15 * 60 * 1000, max: 80, standardHeaders: true, legacyHeaders: false,
   message: { erro: "Muitas tentativas. Tente novamente mais tarde." },
 });
 
