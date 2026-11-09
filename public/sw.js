@@ -14,7 +14,7 @@
 //   pedido, login) NUNCA é interceptada — vai direto pra rede, sem cache.
 // ============================================================
 
-const VERSAO_CACHE = "ctprime-v2-desconto";
+const VERSAO_CACHE = "ctprime-v3-codigo-equipe";
 const CACHE_ESTATICO = `${VERSAO_CACHE}-estatico`;
 const CACHE_PAGINAS = `${VERSAO_CACHE}-paginas`;
 const CACHE_API = `${VERSAO_CACHE}-api`;

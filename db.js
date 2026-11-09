@@ -119,6 +119,9 @@ const colunasConfig = db.prepare("PRAGMA table_info(configuracoes)").all().map((
 if (!colunasConfig.includes("descontoPercentual")) {
   db.exec("ALTER TABLE configuracoes ADD COLUMN descontoPercentual INTEGER NOT NULL DEFAULT 0");
 }
+if (!colunasConfig.includes("descontoCodigoGeralHash")) {
+  db.exec("ALTER TABLE configuracoes ADD COLUMN descontoCodigoGeralHash TEXT");
+}
 const colunasPedidosDesconto = db.prepare("PRAGMA table_info(pedidos)").all().map((c) => c.name);
 for (const [coluna, tipo] of [
   ["subtotal", "REAL"], ["desconto", "REAL"], ["descontoPercentual", "INTEGER"], ["funcionarioDesconto", "TEXT"]

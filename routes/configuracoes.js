@@ -6,7 +6,7 @@ const router = express.Router();
 
 // Pública — o cardápio do cliente precisa do nome da loja
 router.get("/", (req, res) => {
-  res.json(db.prepare("SELECT * FROM configuracoes WHERE id = 1").get());
+  res.json(db.prepare("SELECT id, nomeLoja, cnpj, telefone, email, descontoPercentual FROM configuracoes WHERE id = 1").get());
 });
 
 router.put("/", autenticar, permitirPapeis("admin"), (req, res) => {
@@ -15,7 +15,7 @@ router.put("/", autenticar, permitirPapeis("admin"), (req, res) => {
     UPDATE configuracoes SET nomeLoja=?, cnpj=?, telefone=?, email=? WHERE id = 1
   `).run(nomeLoja || "", cnpj || "", telefone || "", email || "");
 
-  const config = db.prepare("SELECT * FROM configuracoes WHERE id = 1").get();
+  const config = db.prepare("SELECT id, nomeLoja, cnpj, telefone, email, descontoPercentual FROM configuracoes WHERE id = 1").get();
   req.app.get("io").emit("configuracoes:atualizada", config);
   res.json(config);
 });
