@@ -2373,7 +2373,7 @@ async function renderConfiguracoes(container) {
           if (!f || !confirm("Gerar outro código para " + f.nome + "? O anterior deixará de funcionar.")) return;
           try {
             const resultado = await store.descontos.renovar(f.id);
-            alert("NOVO CÓDIGO DE " + resultado.nome + ":\\n\\n" + resultado.codigo + "\\n\\nCopie agora. Ele não será mostrado novamente.");
+            alert("NOVO CÓDIGO DE " + resultado.nome + ":\n\n" + resultado.codigo + "\n\nCopie agora. Ele não será mostrado novamente.");
           } catch (erro) { mostrarToast(erro.message); }
         });
       });
@@ -2386,7 +2386,7 @@ async function renderConfiguracoes(container) {
     try {
       const resultado = await store.descontos.adicionar(nome);
       campo.value = "";
-      alert("CÓDIGO DE " + resultado.nome + ":\\n\\n" + resultado.codigo + "\\n\\nCopie agora. Ele não será mostrado novamente.");
+      alert("CÓDIGO DE " + resultado.nome + ":\n\n" + resultado.codigo + "\n\nCopie agora. Ele não será mostrado novamente.");
       await carregarFuncionariosDesconto();
     } catch (erro) { mostrarToast(erro.message); }
   });
