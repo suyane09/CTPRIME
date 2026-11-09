@@ -60,7 +60,7 @@ try {
   $servico = Get-Service -Name "pm2.exe" -ErrorAction Stop
   if ($servico.Status -ne "Running") { throw "O servico pm2.exe nao esta ativo. Verifique antes de atualizar." }
 
-  Write-Host "BAIXANDO VERSAO DE TESTE E REFERENCIA DO GITHUB..." -ForegroundColor Cyan
+  Write-Host "BAIXANDO CODIGO E PREPARANDO MESCLA COM A VERSAO DA ACADEMIA..." -ForegroundColor Cyan
   New-Item -ItemType Directory -Path $temporario -Force | Out-Null
   $zipNovo = Join-Path $temporario "novo.zip"
   $zipBase = Join-Path $temporario "base.zip"
@@ -69,23 +69,21 @@ try {
   $novo = Obter-RaizZip $zipNovo (Join-Path $temporario "novo")
   $base = Obter-RaizZip $zipBase (Join-Path $temporario "base")
 
-  # Nao apaga ajustes exclusivos do computador da academia.
-  foreach ($relativo in $arquivosAntigos) {
-    $atual = Join-Path $root $relativo
-    $referencia = Join-Path $base $relativo
-    if (!(Test-Path -LiteralPath $atual -PathType Leaf) -or !(Mesmo-Hash $atual $referencia)) {
-      throw "Arquivo local diferente do GitHub: $relativo. Nao sobrepor! Envie este aviso para revisar a versao instalada."
-    }
+  # Mescla o codigo novo com as modificacoes exclusivas da academia.
+  # Toda a preparacao e validacao acontecem em pasta temporaria, SEM parar o servidor.
+  $stage = Join-Path $temporario "stage"
+  $mesclador = Join-Path $novo "mesclar-desconto-local.js"
+  if (!(Test-Path -LiteralPath $mesclador -PathType Leaf)) {
+    throw "Mesclador nao encontrado no pacote baixado."
   }
-  foreach ($relativo in $arquivosNovos) {
-    if (Test-Path -LiteralPath (Join-Path $root $relativo)) {
-      throw "Ja existe um arquivo local chamado $relativo. Parando para preservar alteracoes."
-    }
+  & node $mesclador $base $novo $root $stage
+  if ($LASTEXITCODE -ne 0) {
+    throw "Mescla segura nao foi possivel. O sistema da academia nao foi alterado."
   }
 
-  # So para a instalacao se nao conseguir validar todos os JS antes.
+  # Nao prossegue se o codigo mesclado apresentar erro de sintaxe.
   foreach ($relativo in @("db.js", "server.js", "routes/pedidos.js", "routes/descontos.js", "services/descontos.js", "public/sw.js")) {
-    & node --check (Join-Path $novo $relativo)
+    & node --check (Join-Path $stage $relativo)
     if ($LASTEXITCODE -ne 0) { throw "JavaScript invalido em $relativo" }
   }
 
@@ -114,7 +112,7 @@ try {
   foreach ($relativo in $arquivos) {
     $destino = Join-Path $root $relativo
     New-Item -ItemType Directory -Path (Split-Path $destino) -Force | Out-Null
-    Copy-Item -LiteralPath (Join-Path $novo $relativo) -Destination $destino -Force
+    Copy-Item -LiteralPath (Join-Path $stage $relativo) -Destination $destino -Force
   }
   Start-Service -Name "pm2.exe"
   $servicoParado = $false
