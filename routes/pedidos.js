@@ -3,6 +3,7 @@ const { randomUUID } = require("crypto");
 const rateLimit = require("express-rate-limit");
 const db = require("../db");
 const { autenticar, permitirPapeis } = require("../middleware/auth");
+const { buscarFuncionarioPorCodigo, obterPercentualDesconto, calcularValores } = require("../services/descontos");
 
 const router = express.Router();
 
@@ -43,7 +44,7 @@ function normalizarTelefone(telefone) {
 
 // Pública — o cardápio do cliente cria pedidos sem precisar de login
 router.post("/", limitadorCriarPedido, (req, res) => {
-  const { cliente, telefone, itens, formaPagamento, trocoPara } = req.body || {};
+  const { cliente, telefone, itens, formaPagamento, trocoPara, codigoFuncionario } = req.body || {};
   // Observação: "total", "precoUnit" e "produtoNome" enviados pelo cliente
   // são IGNORADOS de propósito — nunca confie em preço/total vindo do front-end.
   // Tudo é recalculado abaixo a partir do banco de dados.
@@ -96,6 +97,17 @@ router.post("/", limitadorCriarPedido, (req, res) => {
     total += precoUnit * quantidade;
   }
   total = Math.round(total * 100) / 100; // evita erro de ponto flutuante
+  let percentual = 0;
+  let funcionario = null;
+  // Código enviado só serve como credencial; preço e percentual vêm do SQLite.
+  if (codigoFuncionario !== undefined && codigoFuncionario !== null && codigoFuncionario !== "") {
+    percentual = obterPercentualDesconto();
+    if (!percentual) return res.status(400).json({ erro: "Desconto para funcionários desativado." });
+    funcionario = buscarFuncionarioPorCodigo(codigoFuncionario);
+    if (!funcionario) return res.status(400).json({ erro: "Código de funcionário inválido ou desativado." });
+  }
+  const valores = calcularValores(total, percentual);
+  total = valores.total;
 
   const trocoParaNumero = trocoPara !== undefined && trocoPara !== null && trocoPara !== ""
     ? Number(trocoPara)
@@ -106,9 +118,10 @@ router.post("/", limitadorCriarPedido, (req, res) => {
 
   const id = randomUUID();
   db.prepare(`
-    INSERT INTO pedidos (id, cliente, telefone, itens, total, status, formaPagamento, trocoPara)
-    VALUES (?, ?, ?, ?, ?, 'pendente', ?, ?)
-  `).run(id, cliente.trim().slice(0, 120), telefoneNormalizado, JSON.stringify(itensValidados), total, formaPagamento, trocoParaNumero);
+    INSERT INTO pedidos (id, cliente, telefone, itens, total, status, formaPagamento, trocoPara, subtotal, desconto, descontoPercentual, funcionarioDesconto)
+    VALUES (?, ?, ?, ?, ?, 'pendente', ?, ?, ?, ?, ?, ?)
+  `).run(id, cliente.trim().slice(0, 120), telefoneNormalizado, JSON.stringify(itensValidados),
+    total, formaPagamento, trocoParaNumero, valores.subtotal, valores.desconto, percentual, funcionario ? funcionario.nome : null);
 
   const pedido = paraSaida(db.prepare("SELECT * FROM pedidos WHERE id = ?").get(id));
   req.app.get("io").emit("pedido:novo", pedido);
