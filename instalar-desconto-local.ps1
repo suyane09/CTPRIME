@@ -65,7 +65,7 @@ try {
   $zipNovo = Join-Path $temporario "novo.zip"
   $zipBase = Join-Path $temporario "base.zip"
   Invoke-WebRequest -UseBasicParsing -Uri "https://api.github.com/repos/$repo/zipball/$branch" -OutFile $zipNovo
-  Invoke-WebRequest -UseBasicParsing -Uri "https://api.github.com/repos/$repo/zipball/main" -OutFile $zipBase
+  Invoke-WebRequest -UseBasicParsing -Uri "https://api.github.com/repos/$repo/zipball/9d0f2944d20a18a8a7b29493899269aac001d196" -OutFile $zipBase
   $novo = Obter-RaizZip $zipNovo (Join-Path $temporario "novo")
   $base = Obter-RaizZip $zipBase (Join-Path $temporario "base")
 
