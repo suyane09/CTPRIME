@@ -4882,10 +4882,10 @@ function abrirCarrinho() {
       <div class="form-field"><label for="cliente-nome">Seu nome</label><input id="cliente-nome" placeholder="Como podemos te chamar?" value="${escapeHtml(obterPerfilCliente()?.nome || "")}" /></div>
       <div class="form-field"><label for="cliente-telefone">Seu telefone (com DDD)</label><input id="cliente-telefone" type="tel" inputmode="numeric" placeholder="(11) 99999-9999" value="${escapeHtml(obterPerfilCliente()?.telefone || "")}" /></div>
 
-      <h3>Desconto para funcionários</h3>
+      <h3>Desconto da equipe</h3>
       <div class="form-field">
-        <label for="codigo-funcionario">Código individual (opcional)</label>
-        <input id="codigo-funcionario" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="32" placeholder="Informe seu código de funcionário" />
+        <label for="codigo-funcionario">Código único da equipe (opcional)</label>
+        <input id="codigo-funcionario" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="32" placeholder="Digite o código fornecido pela academia" />
         <button type="button" class="btn-fechar" id="btn-validar-funcionario" style="margin-top:8px">Validar desconto</button>
         <p id="mensagem-funcionario" role="status" aria-live="polite" style="font-size:13px;margin-top:8px"></p>
       </div>
@@ -4958,7 +4958,7 @@ function abrirCarrinho() {
       // Desconsidera uma resposta antiga se o campo mudou durante a consulta.
       if (campoCodigo.value.trim().replace(/[\\s-]/g, "").toUpperCase() !== codigo) return;
       funcionarioDesconto = { codigo, nome: dados.nome, percentual: dados.percentual };
-      mensagemFuncionario.textContent = `Desconto de ${dados.percentual}% aplicado para ${dados.nome}.`;
+      mensagemFuncionario.textContent = `Desconto da equipe de ${dados.percentual}% aplicado.`;
       renderItensCarrinho();
     } catch (erro) {
       funcionarioDesconto = null;
